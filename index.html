@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Studio Transit — UX Agentur</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0c0c0e;overflow:hidden;font-family:'Courier New',monospace;}
+canvas{display:block;width:100vw;height:100vh;}
+
+#vig{position:fixed;inset:0;pointer-events:none;z-index:4;
+  background:radial-gradient(ellipse at 50% 48%,transparent 30%,rgba(6,6,8,.18) 58%,rgba(4,4,6,.78) 100%);}
+
+#logo{position:fixed;top:22px;left:24px;z-index:20;pointer-events:none;}
+#logo .l1{font-size:13px;letter-spacing:.32em;color:rgba(240,238,232,.78);text-transform:uppercase;}
+#logo .l2{font-size:7px;letter-spacing:.24em;color:rgba(160,242,60,.46);text-transform:uppercase;margin-top:4px;}
+
+#hud{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  z-index:10;display:flex;gap:24px;align-items:center;pointer-events:none;}
+#hud a{color:rgba(240,238,232,.18);text-decoration:none;font-size:9px;letter-spacing:.28em;
+  text-transform:uppercase;pointer-events:all;transition:color .22s;cursor:pointer;padding:6px 0;}
+#hud a:hover{color:rgba(160,242,60,.65);}
+#hud span{color:rgba(240,238,232,.1);font-size:8px;}
+
+#stn{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:10;color:rgba(240,238,232,0);font-size:12px;letter-spacing:.4em;
+  text-transform:uppercase;pointer-events:none;transition:color 1.8s;}
+#stn.show{color:rgba(240,238,232,.2);}
+
+#nav{position:fixed;right:24px;top:50%;transform:translateY(-50%);z-index:20;
+  display:flex;flex-direction:column;gap:0;}
+.ni{display:flex;align-items:center;gap:12px;padding:10px 0;cursor:pointer;
+  border:none;background:none;transition:opacity .18s;opacity:.32;}
+.ni:hover{opacity:.72;}
+.ni.on{opacity:1;}
+.nb{width:14px;height:1px;background:rgba(240,238,232,.18);flex-shrink:0;transition:all .22s;}
+.ni.on .nb{width:22px;background:rgba(160,242,60,.9);}
+.ni:hover .nb{background:rgba(240,238,232,.5);}
+.nl{font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(240,238,232,.62);white-space:nowrap;transition:color .18s;}
+.ni.on .nl{color:rgba(160,242,60,.95);}
+
+#mk{position:fixed;inset:0;z-index:15;pointer-events:none;}
+.m{position:absolute;transform:translate(-50%,-50%);pointer-events:all;cursor:pointer;
+  display:flex;align-items:center;gap:8px;padding:8px;}
+.md{width:6px;height:6px;border-radius:50%;border:1px solid rgba(240,238,232,.4);
+  flex-shrink:0;transition:all .2s;background:transparent;}
+.m:hover .md{background:rgba(160,242,60,.9);border-color:rgba(160,242,60,1);
+  box-shadow:0 0 10px rgba(160,242,60,.35);}
+.ml{font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(240,238,232,.42);white-space:nowrap;transition:color .2s;
+  text-shadow:0 1px 10px rgba(0,0,0,.95);}
+.m:hover .ml{color:rgba(160,242,60,.95);}
+.mr{position:absolute;top:50%;left:8px;width:22px;height:22px;border-radius:50%;
+  border:1px solid rgba(240,238,232,.12);animation:pu 3.2s ease-out infinite;
+  pointer-events:none;transform:translate(-50%,-50%);}
+@keyframes pu{
+  0%{opacity:.5;transform:translate(-50%,-50%) scale(.5);}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(2.4);}
+}
+
+#ref{position:fixed;right:0;top:0;bottom:0;z-index:30;
+  pointer-events:none;opacity:0;transition:opacity .26s,transform .26s;transform:translateX(14px);}
+#ref.show{opacity:1;pointer-events:all;transform:translateX(0);}
+#ref-card{width:290px;height:100%;background:rgba(8,8,10,.92);
+  border-left:1px solid rgba(240,238,232,.06);backdrop-filter:blur(16px);
+  display:flex;flex-direction:column;overflow:hidden;position:relative;}
+#ref-scroll{flex:1;overflow-y:auto;padding:56px 26px 24px;
+  display:flex;flex-direction:column;gap:16px;
+  scrollbar-width:thin;scrollbar-color:rgba(160,242,60,.1) transparent;}
+#ref-tag{font-size:6px;letter-spacing:.48em;color:rgba(160,242,60,.5);text-transform:uppercase;}
+#ref-title{font-size:17px;color:rgba(240,238,232,.9);letter-spacing:.02em;line-height:1.2;font-weight:normal;}
+#ref-sub{font-size:8px;letter-spacing:.18em;color:rgba(240,238,232,.22);text-transform:uppercase;margin-top:-4px;}
+#ref-divider{height:1px;background:rgba(240,238,232,.05);margin:2px 0;}
+#ref-desc{font-size:11px;line-height:1.72;color:rgba(240,238,232,.46);font-family:sans-serif;letter-spacing:.01em;}
+#ref-tags{display:flex;flex-wrap:wrap;gap:5px;}
+.rt{font-size:7px;letter-spacing:.14em;text-transform:uppercase;padding:4px 9px;
+  border:1px solid rgba(240,238,232,.08);border-radius:2px;color:rgba(240,238,232,.28);}
+#ref-footer{padding:20px 26px;border-top:1px solid rgba(240,238,232,.05);display:flex;flex-direction:column;gap:9px;}
+#ref-link{display:block;padding:13px 20px;background:rgba(160,242,60,.08);
+  border:1px solid rgba(160,242,60,.3);border-radius:4px;color:rgba(160,242,60,.88);
+  font-size:9px;letter-spacing:.22em;text-transform:uppercase;text-decoration:none;
+  transition:all .2s;text-align:center;font-family:'Courier New',monospace;}
+#ref-link:hover{background:rgba(160,242,60,.16);border-color:rgba(160,242,60,.65);}
+#ref-close{display:block;padding:11px 20px;border:1px solid rgba(240,238,232,.07);
+  border-radius:4px;color:rgba(240,238,232,.26);font-size:9px;letter-spacing:.22em;
+  text-transform:uppercase;cursor:pointer;transition:all .2s;background:none;
+  font-family:'Courier New',monospace;text-align:center;}
+#ref-close:hover{border-color:rgba(240,238,232,.22);color:rgba(240,238,232,.58);}
+#ref-x{position:absolute;top:16px;right:16px;z-index:2;width:28px;height:28px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  color:rgba(240,238,232,.26);font-size:14px;border-radius:50%;
+  border:1px solid rgba(240,238,232,.07);transition:all .2s;background:rgba(8,8,10,.6);}
+#ref-x:hover{color:rgba(240,238,232,.68);border-color:rgba(240,238,232,.22);}
+
+#imp{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;opacity:0;transition:opacity .22s;}
+#imp.show{opacity:1;pointer-events:all;}
+#imp-bg{position:absolute;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);}
+#imp-box{position:relative;z-index:1;background:rgba(8,8,10,.97);
+  border:1px solid rgba(240,238,232,.06);border-radius:8px;
+  width:min(460px,88vw);max-height:74vh;overflow-y:auto;padding:32px;
+  scrollbar-width:thin;scrollbar-color:rgba(160,242,60,.1) transparent;}
+#imp-box h2{font-size:9px;letter-spacing:.42em;color:rgba(160,242,60,.6);text-transform:uppercase;margin-bottom:20px;}
+#imp-box h3{font-size:8.5px;letter-spacing:.28em;color:rgba(240,238,232,.38);text-transform:uppercase;margin:16px 0 7px;}
+#imp-box p{font-size:10.5px;line-height:1.82;color:rgba(240,238,232,.34);font-family:sans-serif;}
+#imp-box a{color:rgba(160,242,60,.5);text-decoration:none;}
+#imp-close{margin-top:24px;display:inline-block;padding:10px 20px;
+  border:1px solid rgba(240,238,232,.09);border-radius:4px;
+  color:rgba(240,238,232,.33);font-size:9px;letter-spacing:.22em;
+  text-transform:uppercase;cursor:pointer;transition:all .2s;background:none;
+  font-family:'Courier New',monospace;}
+#imp-close:hover{border-color:rgba(240,238,232,.26);color:rgba(240,238,232,.62);}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vig"></div>
+<div id="mk"></div>
+
+<div id="logo"><div class="l1">UX Berlin Transit</div><div class="l2">UX · Interface · Strategy</div></div>
+
+<div id="hud">
+  <a onclick="showImp('impressum')">Impressum</a>
+  <span>·</span>
+  <a onclick="showImp('datenschutz')">Datenschutz</a>
+</div>
+
+<div id="stn"></div>
+
+<div id="nav">
+  <div class="ni on" data-v="standing" onclick="goV('standing')"><div class="nb"></div><div class="nl">Übersicht</div></div>
+  <div class="ni"    data-v="seat"     onclick="goV('seat')"    ><div class="nb"></div><div class="nl">E-Commerce</div></div>
+  <div class="ni"    data-v="screen"   onclick="goV('screen')"  ><div class="nb"></div><div class="nl">Dashboard</div></div>
+  <div class="ni"    data-v="window"   onclick="goV('window')"  ><div class="nb"></div><div class="nl">Mobile App</div></div>
+  <div class="ni"    data-v="door"     onclick="goV('door')"    ><div class="nb"></div><div class="nl">Branding</div></div>
+</div>
+
+<div id="ref">
+  <div id="ref-card">
+    <div id="ref-x" onclick="closeRef()">✕</div>
+    <div id="ref-scroll">
+      <div id="ref-tag">Referenz</div>
+      <div id="ref-title">–</div>
+      <div id="ref-sub">–</div>
+      <div id="ref-divider"></div>
+      <div id="ref-desc">–</div>
+      <div id="ref-tags"></div>
+    </div>
+    <div id="ref-footer">
+      <a id="ref-link" href="#" target="_blank" rel="noopener">Website ansehen →</a>
+      <button id="ref-close" onclick="closeRef()">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<div id="imp">
+  <div id="imp-bg" onclick="closeImp()"></div>
+  <div id="imp-box">
+    <h2 id="imp-heading">–</h2>
+    <div id="imp-body"></div>
+    <button id="imp-close" onclick="closeImp()">Schließen</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+if(!window.THREE){document.body.innerHTML='<p style="color:#fff;padding:2rem">Three.js konnte nicht geladen werden.</p>';throw new Error('no three');}
+
+// ── DATA ──────────────────────────────────────────────────────
+var REFS={
+  standing:{title:'Studio Transit',sub:'UX Agentur · Gesamtüberblick',
+    desc:'Wir gestalten digitale Erlebnisse, die Menschen wirklich nutzen wollen. Von der ersten Skizze bis zum fertigen Produkt — strategisch, iterativ, nutzerzentriert.',
+    tags:['UX Strategy','Research','Prototyping','Design Systems'],link:'https://example-agency.de',linkLabel:'Mehr erfahren →'},
+  seat:{title:'Heindl Watches',sub:'E-Commerce · Shopify Redesign',
+    desc:'UX-Redesign eines Schweizer Uhren-Onlineshops. Conversion-Rate +34 % durch optimierten Checkout-Flow und emotionalere Markenkommunikation.',
+    tags:['UX Research','Shopify','Conversion','UI Design'],link:'https://heindl-watches.com',linkLabel:'Projekt ansehen →'},
+  screen:{title:'Velox Analytics',sub:'SaaS Dashboard · B2B',
+    desc:'Analyse-Dashboard für Logistikunternehmen. Rollenbasierte Ansichten und ein Design System für 12 Produktteams.',
+    tags:['Dashboard Design','Design System','Figma','Data Viz'],link:'https://velox-analytics.io',linkLabel:'Case Study →'},
+  window:{title:'Roam',sub:'iOS & Android · 0→1 Product',
+    desc:'Reiseplanung neu gedacht: KI-Empfehlungen, Offline-Karten, Community. 40.000 Downloads in den ersten drei Monaten.',
+    tags:['Mobile UX','Research','Prototyping','iOS / Android'],link:'https://roamapp.travel',linkLabel:'App ansehen →'},
+  door:{title:'Nordhavn Studio',sub:'Brand Identity · Web',
+    desc:'Brand-System für ein Kopenhagener Architekturbüro — Logo, Typographie, Fotografie-Richtlinien, minimalistische Website.',
+    tags:['Brand Identity','Web Design','Typography'],link:'https://nordhavn.studio',linkLabel:'Website besuchen →'},
+};
+function openRef(v){
+  var r=REFS[v];if(!r)return;
+  document.getElementById('ref-title').textContent=r.title;
+  document.getElementById('ref-sub').textContent=r.sub;
+  document.getElementById('ref-desc').textContent=r.desc;
+  document.getElementById('ref-link').href=r.link;
+  document.getElementById('ref-link').textContent=r.linkLabel;
+  var tc=document.getElementById('ref-tags');tc.innerHTML='';
+  r.tags.forEach(function(t){var d=document.createElement('div');d.className='rt';d.textContent=t;tc.appendChild(d);});
+  document.getElementById('ref').classList.add('show');
+}
+function closeRef(){document.getElementById('ref').classList.remove('show');}
+
+var IMP={
+  impressum:{heading:'Impressum',body:'<h3>Angaben gemäß § 5 TMG</h3><p>Studio Transit GmbH<br>Musterstraße 42<br>10115 Berlin</p><h3>Kontakt</h3><p>E-Mail: <a href="mailto:hallo@studio-transit.de">hallo@studio-transit.de</a><br>Tel: +49 30 123 456 78</p><h3>Verantwortlich</h3><p>Max Mustermann, Geschäftsführer</p><h3>Haftung</h3><p>Inhalte sorgfältig erstellt. Keine Gewähr für Richtigkeit.</p>'},
+  datenschutz:{heading:'Datenschutz',body:'<h3>Verantwortlicher</h3><p>Studio Transit GmbH, Musterstraße 42, 10115 Berlin</p><h3>Datenerhebung</h3><p>Diese Website erhebt keine personenbezogenen Daten. Keine Cookies, kein Tracking.</p><h3>Hosting</h3><p>Server in der EU. Verbindungsdaten werden 7 Tage gespeichert.</p><h3>Ihre Rechte</h3><p>Auskunft, Löschung gemäß DSGVO: <a href="mailto:datenschutz@studio-transit.de">datenschutz@studio-transit.de</a></p>'},
+};
+window.showImp=function(t){var d=IMP[t];if(!d)return;document.getElementById('imp-heading').textContent=d.heading;document.getElementById('imp-body').innerHTML=d.body;document.getElementById('imp').classList.add('show');};
+window.closeImp=function(){document.getElementById('imp').classList.remove('show');};
+
+// ── RENDERER ──────────────────────────────────────────────────
+var cv=document.getElementById('c');
+var W=window.innerWidth,H=window.innerHeight;
+var renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'});
+// 1.5 pixel ratio for sharpness, throttled by render-on-demand when camera is still
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.setSize(W,H);
+renderer.toneMapping=THREE.ReinhardToneMapping;
+renderer.toneMappingExposure=1.1;
+renderer.shadowMap.enabled=false; // no shadows = big perf win
+
+var scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0c0c0e);
+scene.fog=new THREE.FogExp2(0x0c0c0e,.032);
+
+var camera=new THREE.PerspectiveCamera(66,W/H,.06,62);
+camera.rotation.order='YXZ';
+
+window.addEventListener('resize',function(){
+  W=window.innerWidth;H=window.innerHeight;
+  renderer.setSize(W,H);camera.aspect=W/H;camera.updateProjectionMatrix();
+  mEls.forEach(function(m){m.sx=-1;m.sy=-1;});
+  needsRender=true;
+});
+
+// ── TEXTURES ──────────────────────────────────────────────────
+function mkTex(w,h,fn,rS,rT){
+  var c=document.createElement('canvas');c.width=w;c.height=h;
+  fn(c.getContext('2d'),w,h);
+  var t=new THREE.CanvasTexture(c);
+  if(rS){t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rS,rT||rS);}
+  return t;
+}
+
+// Wall — modern white composite panels, minimal seams
+var tWall=mkTex(512,256,function(ctx,w,h){
+  // base: bright white-grey
+  ctx.fillStyle='#e8e6e2';ctx.fillRect(0,0,w,h);
+  // large panels with very subtle variation
+  for(var x=0;x<w;x+=128)for(var y=0;y<h;y+=96){
+    var v=228+(Math.random()*8|0);
+    ctx.fillStyle='rgb('+v+','+v+','+(v-2)+')';ctx.fillRect(x+1,y+1,126,94);
+  }
+  // hairline seams
+  ctx.strokeStyle='rgba(0,0,0,.07)';ctx.lineWidth=.6;
+  for(var x2=0;x2<w;x2+=128){ctx.beginPath();ctx.moveTo(x2,0);ctx.lineTo(x2,h);ctx.stroke();}
+  for(var y2=0;y2<h;y2+=96){ctx.beginPath();ctx.moveTo(0,y2);ctx.lineTo(w,y2);ctx.stroke();}
+  // chartreuse accent line
+  ctx.fillStyle='rgba(160,242,60,.2)';ctx.fillRect(0,h*.56,w,5);
+});
+
+// Floor — dark polished concrete
+var tFloor=mkTex(256,256,function(ctx,w,h){
+  ctx.fillStyle='#1a1a1c';ctx.fillRect(0,0,w,h);
+  // large format tiles
+  for(var x=0;x<w;x+=64)for(var y=0;y<h;y+=64){
+    var v=24+(Math.random()*8|0);
+    ctx.fillStyle='rgb('+v+','+v+','+(v+1)+')';ctx.fillRect(x+1,y+1,62,62);
+  }
+  ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=.5;
+  for(var x2=0;x2<w;x2+=64){ctx.beginPath();ctx.moveTo(x2,0);ctx.lineTo(x2,h);ctx.stroke();}
+  for(var y2=0;y2<h;y2+=64){ctx.beginPath();ctx.moveTo(0,y2);ctx.lineTo(w,y2);ctx.stroke();}
+  // subtle specular glints
+  for(var i=0;i<20;i++){
+    ctx.fillStyle='rgba(255,255,255,'+(0.01+Math.random()*.025)+')';
+    ctx.beginPath();ctx.ellipse(Math.random()*w,Math.random()*h,8+Math.random()*20,.5+Math.random()*1.5,Math.random()*Math.PI,0,Math.PI*2);ctx.fill();
+  }
+},1.5,5);
+
+// Ceiling — clean bright white
+var tCeil=mkTex(128,64,function(ctx,w,h){
+  ctx.fillStyle='#f0eee8';ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='rgba(0,0,0,.03)';ctx.lineWidth=.6;
+  for(var x=0;x<w;x+=64){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+  for(var y=0;y<h;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+});
+
+// Seat — charcoal microfibre
+var tSeat=mkTex(64,64,function(ctx,w,h){
+  ctx.fillStyle='#252428';ctx.fillRect(0,0,w,h);
+  for(var i=0;i<w;i+=2){ctx.fillStyle='rgba(255,255,255,.014)';ctx.fillRect(i,0,1,h);}
+  for(var j=0;j<h;j+=3){ctx.fillStyle='rgba(0,0,0,.025)';ctx.fillRect(0,j,w,1);}
+});
+var MSEAT=new THREE.MeshStandardMaterial({map:tSeat,roughness:.88,color:0x2c2a30});
+var MSMET=new THREE.MeshStandardMaterial({color:0x5a5868,metalness:.62,roughness:.4});
+
+// Screen L — Dashboard (Velox)
+var tScreenL=mkTex(512,288,function(ctx,w,h){
+  ctx.fillStyle='#060912';ctx.fillRect(0,0,w,h);
+  // header bar
+  ctx.fillStyle='rgba(160,242,60,.9)';ctx.fillRect(0,0,w,28);
+  ctx.fillStyle='#04060e';ctx.font='bold 13px monospace';ctx.fillText('VELOX ANALYTICS',14,19);
+  // 3 large metrics
+  var cols=[[20,'3.2M','Nutzer'],[190,'98%','Uptime'],[360,'12','Kunden']];
+  cols.forEach(function(c){
+    ctx.fillStyle='rgba(255,255,255,.06)';ctx.fillRect(c[0],38,148,76);
+    ctx.fillStyle='rgba(160,242,60,.92)';ctx.font='bold 32px monospace';ctx.fillText(c[1],c[0]+12,86);
+    ctx.fillStyle='rgba(255,255,255,.38)';ctx.font='10px monospace';ctx.fillText(c[2],c[0]+12,106);
+  });
+  // bar chart
+  [.42,.6,.35,.75,.52,.88,.65,1,.78,.92,.6,.82].forEach(function(v,i){
+    var bh=Math.round(v*58),bx=20+i*40,by=h-16-bh;
+    ctx.fillStyle='rgba(160,242,60,'+(0.18+v*.52)+')';
+    ctx.fillRect(bx,by,28,bh);
+  });
+  ctx.fillStyle='rgba(255,255,255,.06)';ctx.fillRect(0,h-16,w,1);
+  ctx.fillStyle='rgba(255,255,255,.12)';ctx.font='9px monospace';ctx.fillText('velox-analytics.io',w-148,h-4);
+  for(var s=0;s<h;s+=2){ctx.fillStyle='rgba(0,0,0,.032)';ctx.fillRect(0,s,w,1);}
+});
+
+// Screen R — E-Commerce (Heindl)
+var tScreenR=mkTex(512,288,function(ctx,w,h){
+  ctx.fillStyle='#0a0806';ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='rgba(210,178,110,.88)';ctx.fillRect(0,0,w,28);
+  ctx.fillStyle='#080604';ctx.font='bold 13px monospace';ctx.fillText('HEINDL WATCHES',14,19);
+  // large watch face
+  var cx=140,cy=168,r=88;
+  ctx.strokeStyle='rgba(210,178,110,.35)';ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle='rgba(210,178,110,.15)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.arc(cx,cy,r-14,0,Math.PI*2);ctx.stroke();
+  for(var tk=0;tk<12;tk++){
+    var a=tk/12*Math.PI*2-Math.PI/2;
+    var r1=r-5,r2=r-18;
+    ctx.strokeStyle='rgba(210,178,110,.6)';ctx.lineWidth=tk%3===0?2:.8;
+    ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);
+    ctx.lineTo(cx+Math.cos(a)*r2,cy+Math.sin(a)*r2);ctx.stroke();
+  }
+  ctx.strokeStyle='rgba(210,178,110,.85)';ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx,cy-54);ctx.stroke();
+  ctx.strokeStyle='rgba(210,178,110,.7)';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+38,cy+22);ctx.stroke();
+  // stat
+  ctx.fillStyle='rgba(210,178,110,.92)';ctx.font='bold 44px monospace';ctx.fillText('+34%',290,120);
+  ctx.fillStyle='rgba(255,255,255,.38)';ctx.font='11px monospace';ctx.fillText('Conversion Rate',290,142);
+  ctx.fillStyle='rgba(210,178,110,.7)';ctx.font='bold 22px monospace';ctx.fillText('Shopify',290,192);
+  ctx.fillStyle='rgba(255,255,255,.25)';ctx.font='10px monospace';ctx.fillText('Redesign 2024',290,212);
+  ctx.fillStyle='rgba(255,255,255,.1)';ctx.font='9px monospace';ctx.fillText('heindl-watches.com',w-200,h-4);
+  for(var s2=0;s2<h;s2+=2){ctx.fillStyle='rgba(0,0,0,.028)';ctx.fillRect(0,s2,w,1);}
+});
+
+// ── SCENE ─────────────────────────────────────────────────────
+var CL=20,CW=1.6,CH=2.2,FY=-1.0,CYL=FY+CH;
+
+function mat(o){return new THREE.MeshStandardMaterial(o);}
+function addP(w,h,m,px,py,pz,rx,ry){
+  var o=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);
+  o.position.set(px,py,pz);if(rx)o.rotation.x=rx;if(ry)o.rotation.y=ry;scene.add(o);return o;
+}
+function addB(w,h,d,m,px,py,pz){
+  var o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
+  o.position.set(px,py,pz);scene.add(o);return o;
+}
+
+// ── SURFACES ──────────────────────────────────────────────────
+addP(CW*2,CL+3,mat({map:tFloor,roughness:.88,metalness:.08}),0,FY,-(CL/2-2),-Math.PI/2);
+addP(CW*2,CL+3,mat({map:tCeil,roughness:.75,color:0xf4f2ee}),0,CYL,-(CL/2-2),Math.PI/2);
+
+// Walls: lower composite panel (bright) + upper slim dark panel
+var mWall=mat({map:tWall,roughness:.82});
+var mDarkPanel=mat({color:0x2a2830,roughness:.78,metalness:.05});
+var wallH=CH*.62,panH=CH*.38;
+addP(CL+3,wallH,mWall,-CW,FY+wallH/2,-(CL/2-2),0,Math.PI/2);
+addP(CL+3,panH,mDarkPanel,-CW,FY+wallH+panH/2,-(CL/2-2),0,Math.PI/2);
+addP(CL+3,wallH,mWall,CW,FY+wallH/2,-(CL/2-2),0,-Math.PI/2);
+addP(CL+3,panH,mDarkPanel,CW,FY+wallH+panH/2,-(CL/2-2),0,-Math.PI/2);
+
+// Slim aluminium dado strip at panel junction
+addB(CW*2+.04,.025,.025,mat({color:0xd0ccc4,metalness:.82,roughness:.22}),0,FY+wallH,-(CL/2-2));
+
+// End walls — dark
+var mEnd=mat({color:0x1e1c22,roughness:.82});
+addP(CW*2,CH,mEnd,0,FY+CH/2,-CL+2);
+var bwm=new THREE.Mesh(new THREE.PlaneGeometry(CW*2,CH),mEnd);
+bwm.rotation.y=Math.PI;bwm.position.set(0,FY+CH/2,3.8);scene.add(bwm);
+
+// ── STRUCTURAL RIBS — slimmer, more refined ────────────────────
+var mRib=mat({color:0xc8c4bc,metalness:.72,roughness:.32});
+for(var rz=-CL+2;rz<=2;rz+=2.8){
+  // ceiling cross-bar
+  addB(CW*2+.02,.03,.04,mRib,0,CYL,rz);
+  // slim side pillars
+  addB(.03,CH,.04,mRib,-CW,FY+CH/2,rz);
+  addB(.03,CH,.04,mRib,CW,FY+CH/2,rz);
+}
+
+// ── DOOR — modern sliding door ────────────────────────────────
+var mDoor=mat({color:0x28262e,metalness:.52,roughness:.55});
+var mDoorGlass=mat({color:0x080c14,transparent:true,opacity:.82,roughness:.02,metalness:.15});
+// two door panels
+addB(.54,1.92,.05,mDoor,-.54,FY+.96,-CL+2.02);
+addB(.54,1.92,.05,mDoor,.54,FY+.96,-CL+2.02);
+// door gap strip
+addB(.015,1.92,.05,mat({color:0x04040a,metalness:.9}),0,FY+.96,-CL+2.01);
+// door window
+[-.54,.54].forEach(function(dx){
+  var dg=new THREE.Mesh(new THREE.PlaneGeometry(.44,.55),mDoorGlass);
+  dg.position.set(dx,FY+1.68,-CL+2.05);scene.add(dg);
+  // window frame
+  addB(.46,.57,.03,mat({color:0x201e26,metalness:.5}),dx,FY+1.68,-CL+2.0);
+});
+
+// ── WINDOWS — larger, modern slim frames ──────────────────────
+var mWF=mat({color:0x2c2a32,metalness:.58,roughness:.55});
+var mWG=mat({color:0x030610,transparent:true,opacity:.84,roughness:.02,metalness:.28,depthWrite:false});
+var mSill=mat({color:0xb8b4ac,metalness:.62,roughness:.42});
+// Larger windows: 1.3 wide, 0.88 tall, slim frame .04
+[-1.1,-3.5,-6.0,-10.6,-13.0,-15.4].forEach(function(wz){
+  addB(.04,.92,1.32,mWF,-CW,FY+1.12,wz);
+  addB(.04,.03,1.32,mSill,-CW,FY+.65,wz);
+  var gl=new THREE.Mesh(new THREE.PlaneGeometry(1.28,.88),mWG);
+  gl.rotation.y=Math.PI/2;gl.position.set(-CW+.018,FY+1.12,wz);scene.add(gl);
+});
+[-1.1,-6.0,-8.4,-10.6,-13.0,-15.4].forEach(function(wz){
+  addB(.04,.92,1.32,mWF,CW,FY+1.12,wz);
+  addB(.04,.03,1.32,mSill,CW,FY+.65,wz);
+  var gl=new THREE.Mesh(new THREE.PlaneGeometry(1.28,.88),mWG);
+  gl.rotation.y=-Math.PI/2;gl.position.set(CW-.018,FY+1.12,wz);scene.add(gl);
+});
+
+// ── SEATS — forward-facing 2+2 ────────────────────────────────
+var SW=.44,SD=.38,SG=.04,WG=.08;
+var SXL1=-CW+WG+SW/2,SXL2=-CW+WG+SW+SG+SW/2;
+var SXR1=CW-WG-SW/2,SXR2=CW-WG-SW-SG-SW/2;
+var AISLE=0.28,PITCH=SD*2+AISLE+0.55;
+
+function addSeat(x,z,faceFwd){
+  var bz=z+(faceFwd?SD/2-0.02:-(SD/2-0.02));
+  var cu=new THREE.Mesh(new THREE.BoxGeometry(SW,.065,SD),MSEAT);
+  cu.position.set(x,FY+.37,z);scene.add(cu);
+  var ba=new THREE.Mesh(new THREE.BoxGeometry(SW,.52,.05),MSEAT);
+  ba.position.set(x,FY+.66,bz);scene.add(ba);
+  var outerX=x+(x<0?-SW/2:SW/2);
+  var ar=new THREE.Mesh(new THREE.BoxGeometry(.04,.14,SD+.04),MSMET);
+  ar.position.set(outerX,FY+.38,z);scene.add(ar);
+}
+for(var pz=-.5;pz>-CL+2.5;pz-=PITCH){
+  var zA=pz,zB=pz-SD-AISLE;
+  addSeat(SXL1,zA,true);addSeat(SXL2,zA,true);
+  addSeat(SXL1,zB,false);addSeat(SXL2,zB,false);
+  addSeat(SXR1,zA,true);addSeat(SXR2,zA,true);
+  addSeat(SXR1,zB,false);addSeat(SXR2,zB,false);
+  [[SXL1+SW/2+SG/2,zA],[SXL1+SW/2+SG/2,zB],[SXR2+SW/2+SG/2,zA],[SXR2+SW/2+SG/2,zB]].forEach(function(p){
+    var dv=new THREE.Mesh(new THREE.BoxGeometry(.04,.14,SD),MSMET);
+    dv.position.set(p[0],FY+.38,p[1]);scene.add(dv);
+  });
+}
+
+// ── GRAB POLES — aisle centre ────────────────────────────────
+var mPole=mat({color:0xd8d4cc,metalness:.9,roughness:.14});
+var POLE_X=0.35;
+[-POLE_X,POLE_X].forEach(function(px){
+  var r=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,CL+3,10),mPole);
+  r.rotation.x=Math.PI/2;r.position.set(px,CYL-.2,-(CL/2-2));scene.add(r);
+});
+for(var pz2=1.2;pz2>-CL+1;pz2-=2.8){
+  [-POLE_X,POLE_X].forEach(function(px){
+    var p=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,CH-.12,10),mPole);
+    p.position.set(px,FY+CH/2,pz2);scene.add(p);
+  });
+}
+
+// ── LED CEILING MODULES — flush, no housing bulk ──────────────
+// Slim recessed LED channel, clearly separated from poles at x=±0.35
+var mChan=mat({color:0x222028,metalness:.5,roughness:.65});
+var mLED=mat({color:0xfff8e8,emissive:0xffe8b0,emissiveIntensity:.7,roughness:.4});
+var LC=new THREE.Color(1,.9,.72); // warm 3200K
+for(var lz=.5;lz>-CL+1;lz-=4.2){
+  // recessed channel (very slim)
+  addB(.18,.035,.75,mChan,0,CYL-.008,lz);
+  // LED diffuser
+  addB(.14,.015,.7,mLED,0,CYL-.038,lz);
+  // point light
+  var lpt=new THREE.PointLight(LC,.65,6.8);
+  lpt.position.set(0,CYL-.14,lz);scene.add(lpt);
+}
+// Warm ambient + subtle cool fill for depth
+scene.add(new THREE.AmbientLight(0x2e2010,3.8));
+var fillL=new THREE.PointLight(0x3a2808,.16,9);fillL.position.set(0,FY+.05,-5);scene.add(fillL);
+
+// ── SCREENS — LARGER (1.1×0.62) ───────────────────────────────
+// Screen L (left wall, z=-8.4) — Dashboard
+var sML=new THREE.Mesh(new THREE.PlaneGeometry(1.1,.62),mat({map:tScreenL,emissive:0x04081a,emissiveIntensity:.95,roughness:.04}));
+sML.rotation.y=Math.PI/2;sML.position.set(-CW+.022,FY+1.52,-8.4);scene.add(sML);
+addB(.022,.68,1.14,mat({color:0x0e0e12,metalness:.65,roughness:.45}),-CW,FY+1.52,-8.4);
+var sgL=new THREE.PointLight(0x0a1430,.42,2.8);sgL.position.set(-CW+.55,FY+1.52,-8.4);scene.add(sgL);
+
+// Screen R (right wall, z=-3.5) — E-Commerce
+var sMR=new THREE.Mesh(new THREE.PlaneGeometry(1.1,.62),mat({map:tScreenR,emissive:0x180c04,emissiveIntensity:.95,roughness:.04}));
+sMR.rotation.y=-Math.PI/2;sMR.position.set(CW-.022,FY+1.52,-3.5);scene.add(sMR);
+addB(.022,.68,1.14,mat({color:0x120e0a,metalness:.65,roughness:.45}),CW,FY+1.52,-3.5);
+var sgR=new THREE.PointLight(0x281404,.42,2.8);sgR.position.set(CW-.55,FY+1.52,-3.5);scene.add(sgR);
+
+// ── TUNNEL ───────────────────────────────────────────────────
+var tnl=new THREE.Mesh(
+  new THREE.CylinderGeometry(4.0,4.0,180,8,1,true),
+  mat({color:0x080808,side:THREE.BackSide,roughness:1})
+);
+tnl.rotation.x=Math.PI/2;tnl.position.set(0,FY+.4,-55);scene.add(tnl);
+for(var ti=0;ti<14;ti++){
+  var tb=new THREE.Mesh(new THREE.SphereGeometry(.03,4,4),
+    mat({color:0x80e020,emissive:0x60a810,emissiveIntensity:2.0}));
+  tb.position.set(0,FY+1.6,-ti*9-5);scene.add(tb);
+}
+
+// ── VIEWS ─────────────────────────────────────────────────────
+// window view: stand in aisle, look diagonally at window z=-6 — not perpendicular into wall
+var VIEWS={
+  standing:{pos:[0,      FY+.9,  1.4],    look:[0,      FY+.86,-14]},
+  seat:    {pos:[CW-.9,  FY+1.52,-3.5],   look:[CW+.1,  FY+1.52,-3.5]},
+  screen:  {pos:[-CW+.9, FY+1.52,-8.4],   look:[-CW-.1, FY+1.52,-8.4]},
+  // Mobile App: near left wall, looking diagonally across interior toward far-right-forward
+  window:  {pos:[-CW+.18, FY+.92, -4.0],   look:[CW-.2, FY+.88, -14]},
+  door:    {pos:[0,      FY+.9,  -CL+4.5],look:[0,      FY+.88,-CL-.5]},
+};
+var curV='standing';
+var tP=VIEWS.standing.pos.slice(),tL=VIEWS.standing.look.slice();
+camera.position.set(tP[0],tP[1],tP[2]);
+camera.lookAt(new THREE.Vector3(tL[0],tL[1],tL[2]));
+
+window.goV=function(name){
+  if(!VIEWS[name])return;
+  if(name===curV){openRef(name);return;}
+  curV=name;
+  tP=VIEWS[name].pos.slice();tL=VIEWS[name].look.slice();
+  document.querySelectorAll('.ni').forEach(function(d){d.classList.toggle('on',d.dataset.v===name);});
+  mEls.forEach(function(m){m.sx=-1;m.sy=-1;});
+  needsRender=true;
+  if(window._refTimer)clearTimeout(window._refTimer);
+  window._refTimer=setTimeout(function(){openRef(name);},700);
+};
+
+// ── MARKERS ───────────────────────────────────────────────────
+var MKS=[
+  {v:'standing',w:new THREE.Vector3(0,      FY+1.06, .8),  l:'Übersicht'},
+  {v:'seat',    w:new THREE.Vector3(CW-.2,   FY+1.52,-3.5), l:'E-Commerce'},
+  {v:'screen',  w:new THREE.Vector3(-CW+.2,  FY+1.52,-8.4), l:'Dashboard'},
+  {v:'window',  w:new THREE.Vector3(-CW+.22, FY+1.12,-6.0), l:'Mobile App'},
+  {v:'door',    w:new THREE.Vector3(0,       FY+1.06,-CL+5),l:'Branding'},
+];
+var mkDiv=document.getElementById('mk'),mEls=[];
+MKS.forEach(function(m){
+  var el=document.createElement('div');el.className='m';
+  el.innerHTML='<div class="mr"></div><div class="md"></div><div class="ml">'+m.l+'</div>';
+  el.addEventListener('click',function(){goV(m.v);});
+  mkDiv.appendChild(el);
+  mEls.push({el:el,w:m.w,v:m.v,sx:-1,sy:-1});
+});
+
+var _v3=new THREE.Vector3();
+var cP=new THREE.Vector3(tP[0],tP[1],tP[2]);
+var cLv=new THREE.Vector3(tL[0],tL[1],tL[2]);
+var MK_THR=0.6;
+var mkFrame=0; // update markers every 3 frames
+
+function updMK(){
+  mkFrame++;
+  if(mkFrame%3!==0)return; // throttle DOM writes to every 3rd frame
+  mEls.forEach(function(m){
+    if(m.v===curV){if(m.el.style.display!=='none')m.el.style.display='none';return;}
+    _v3.copy(m.w).project(camera);
+    var sx=(_v3.x*.5+.5)*W,sy=(-.5*_v3.y+.5)*H,mg=55;
+    if(_v3.z>1||sx<mg||sx>W-mg||sy<mg||sy>H-mg){
+      if(m.el.style.display!=='none')m.el.style.display='none';m.sx=-1;m.sy=-1;return;
+    }
+    if(m.el.style.display==='none')m.el.style.display='flex';
+    if(Math.abs(sx-m.sx)>MK_THR||Math.abs(sy-m.sy)>MK_THR){
+      m.el.style.left=sx+'px';m.el.style.top=sy+'px';m.sx=sx;m.sy=sy;
+    }
+  });
+}
+
+// ── STATIONS ──────────────────────────────────────────────────
+var stnEl=document.getElementById('stn');
+var STNS=['BERLIN MITTE','KREUZBERG','PRENZLAUER BERG','NEUKÖLLN','CHARLOTTENBURG'];
+var stIdx=0,lastStT=-25;
+function showStn(){
+  stnEl.textContent=STNS[stIdx%STNS.length];stnEl.classList.add('show');
+  setTimeout(function(){stnEl.classList.remove('show');},3000);stIdx++;
+}
+
+// ── ANIMATE with render-on-demand when camera is settled ───────
+var clock=new THREE.Clock(),T=0,tnlOff=0;
+var tPv=new THREE.Vector3(),tLv=new THREE.Vector3();
+var needsRender=true;
+var _cPprev=new THREE.Vector3(),_cLprev=new THREE.Vector3();
+
+function animate(){
+  requestAnimationFrame(animate);
+  var dt=Math.min(clock.getDelta(),.05);T+=dt;
+
+  var cyc=T%35,spd=13;
+  if(cyc>28)spd=13*Math.max(0,(35-cyc)/7);
+  else if(cyc<5)spd=13*Math.min(1,cyc/5);
+  if(spd<1.2&&T-lastStT>10){lastStT=T;showStn();}
+
+  tPv.set(tP[0],tP[1],tP[2]);tLv.set(tL[0],tL[1],tL[2]);
+  _cPprev.copy(cP);_cLprev.copy(cLv);
+  cP.lerp(tPv,.06);cLv.lerp(tLv,.06);
+
+  // detect if camera is still moving
+  var moving=(_cPprev.distanceToSquared(cP)>1e-8||_cLprev.distanceToSquared(cLv)>1e-8);
+  if(moving)needsRender=true;
+
+  // tunnel always scrolls when train is moving
+  if(spd>0.5){
+    tnlOff=(tnlOff+spd*dt)%9;
+    tnl.position.z=-55+tnlOff;
+    needsRender=true;
+  }
+
+  if(needsRender){
+    camera.position.copy(cP);
+    camera.lookAt(cLv);
+    camera.rotation.z=0;
+    updMK();
+    renderer.render(scene,camera);
+    if(!moving&&spd<=0.5)needsRender=false; // stop rendering when truly still
+  }
+}
+animate();
+</script>
+</body>
+</html>

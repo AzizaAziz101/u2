@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>TACTICAL_INTELLIGENCE_GER_2026</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --neon-blue: #00f3ff;
+            --alert-red: #ff3e3e;
+            --dim-gray: #333;
+            --bg-black: #080808;
+            --data-green: #00ff66;
+        }
+
+        body {
+            background-color: var(--bg-black);
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            margin: 0;
+            display: grid;
+            grid-template-columns: 450px 1fr;
+            height: 100vh;
+            overflow: hidden;
+            font-size: 12px;
+        }
+
+        /* --- LEFT PANEL: MISSION CONTROL --- */
+        .sidebar {
+            border-right: 1px solid var(--dim-gray);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: linear-gradient(90deg, #0a0a0a 0%, #050505 100%);
+        }
+
+        .header {
+            border-bottom: 2px solid var(--neon-blue);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .header h1 { font-size: 14px; margin: 0; letter-spacing: 3px; }
+
+        .system-stats {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 5px;
+            color: var(--dim-gray); font-size: 10px;
+        }
+
+        .data-block {
+            border: 1px solid var(--dim-gray);
+            padding: 15px;
+            background: rgba(255,255,255,0.02);
+            display: none;
+        }
+
+        .company-entry {
+            margin-bottom: 20px;
+            border-left: 2px solid var(--neon-blue);
+            padding-left: 10px;
+        }
+
+        .company-name { font-weight: 700; color: var(--neon-blue); margin-bottom: 5px; }
+        .tag-row { display: flex; gap: 5px; margin-bottom: 8px; }
+        .tag { font-size: 9px; background: var(--dim-gray); padding: 2px 5px; border-radius: 2px; }
+
+        .potential-box {
+            background: rgba(0, 255, 102, 0.1);
+            border: 1px solid var(--data-green);
+            padding: 8px;
+            margin-top: 10px;
+            font-size: 11px;
+            color: var(--data-green);
+        }
+
+        /* --- MAIN VIEWPORT: TACTICAL MAP --- */
+        .viewport {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        svg { height: 80vh; width: 80%; }
+
+        .germany-poly {
+            fill: none;
+            stroke: var(--dim-gray);
+            stroke-width: 1;
+        }
+
+        .node {
+            fill: #000;
+            stroke: var(--neon-blue);
+            stroke-width: 2;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .node:hover, .node-active {
+            fill: var(--neon-blue);
+            filter: drop-shadow(0 0 10px var(--neon-blue));
+        }
+
+        .crosshair {
+            position: absolute;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="header">
+            <h1>STRAT_RADAR_DE_2026</h1>
+            <div class="system-stats">
+                <span>SECTOR: INDUSTRIAL_ROBOTICS</span>
+                <span style="color:var(--data-green)">LINK_ESTABLISHED</span>
+            </div>
+        </div>
+
+        <div id="selection-hint" style="color: var(--dim-gray); font-style: italic;">
+            > WAITING FOR NODE SELECTION...<br>
+            > ANALYZE REGIONAL CLUSTERS FOR SCALABILITY DATA.
+        </div>
+
+        <div id="data-display" class="data-block">
+            <h2 id="region-title" style="margin: 0 0 15px 0; font-size: 16px;">REGION</h2>
+            <div id="company-container"></div>
+        </div>
+
+        <div style="margin-top: auto; border-top: 1px solid var(--dim-gray); padding-top: 10px;">
+            <div class="system-stats">
+                <span>LATENCY: 4MS</span>
+                <span>UPLINK: 100%</span>
+            </div>
+        </div>
+    </aside>
+
+    <main class="viewport">
+        <div class="crosshair"></div>
+        <svg viewBox="0 0 500 700">
+            <polygon class="germany-poly" points="150,50 350,80 480,250 420,550 350,680 150,650 50,450 100,150" />
+            <circle id="node-muc" class="node" cx="380" cy="580" r="6" onclick="getTele(0)"></circle>
+            <circle id="node-str" class="node" cx="200" cy="550" r="6" onclick="getTele(1)"></circle>
+            <circle id="node-bi" class="node" cx="180" cy="280" r="6" onclick="getTele(2)"></circle>
+            <circle id="node-ber" class="node" cx="400" cy="220" r="6" onclick="getTele(3)"></circle>
+        </svg>
+    </main>
+
+    <script>
+        const nodes = [
+            {
+                id: "MÜNCHEN_CLUSTER",
+                units: [
+                    { name: "Agile Robots", focus: "Kognitive Sensorik", tech: "C++, Python, PyTorch", pot: "High: Vollautonome Produktion ohne Programmierung." },
+                    { name: "Franka Robotics", focus: "Taktile Cobots", tech: "Real-time Control", pot: "Medium: Standard für Labore und feinteilige Montage." },
+                    { name: "RobCo", focus: "Modulare Kits", tech: "Modular Software", pot: "High: Skalierbarkeit für KMU durch Stecksystem." }
+                ]
+            },
+            {
+                id: "STUTTGART_CLUSTER",
+                units: [
+                    { name: "NEURA Robotics", focus: "Multisensorik-Bots", tech: "Neural Networks", pot: "Max: Erster Roboter, der hört, sieht und fühlt." },
+                    { name: "Bosch Rexroth", focus: "Linear-Automation", tech: "PLC/Edge Computing", pot: "Stable: Backbone der weltweiten Automobilindustrie." },
+                    { name: "Festo", focus: "Bionische Robotik", tech: "Pneumatics/Digital", pot: "Medium: Speziallösungen für adaptive Greifsysteme." }
+                ]
+            },
+            {
+                id: "BIELEFELD_CONSTRUCTION",
+                units: [
+                    { name: "Goldbeck", focus: "Industriebau", tech: "BIM / Digital Twin", pot: "Max: Marktdominanz durch 100% Vorfertigung." },
+                    { name: "Schüco", focus: "Smarte Fassaden", tech: "IoT Integration", pot: "Stable: Weltweiter Standard für Gebäudehüllen." }
+                ]
+            },
+            {
+                id: "BERLIN_SOFTWARE",
+                units: [
+                    { name: "Micropsi Industries", focus: "AI Vision", tech: "Neural Training", pot: "Max: Software macht 'dumme' Roboter sehend." },
+                    { name: "Gestalt Robotics", focus: "Edge Cloud AI", tech: "Cloud Native", pot: "High: Auslagerung der Rechenlast für mobile Roboter." }
+                ]
+            }
+        ];
+
+        function getTele(idx) {
+            document.getElementById('selection-hint').style.display = 'none';
+            const display = document.getElementById('data-display');
+            display.style.display = 'block';
+            
+            const node = nodes[idx];
+            document.getElementById('region-title').innerText = node.id;
+            
+            const container = document.getElementById('company-container');
+            container.innerHTML = '';
+            
+            node.units.forEach(u => {
+                const div = document.createElement('div');
+                div.className = 'company-entry';
+                div.innerHTML = `
+                    <div class="company-name">${u.name}</div>
+                    <div class="tag-row"><span class="tag">${u.focus}</span><span class="tag">${u.tech}</span></div>
+                    <div style="font-size:10px; color:#aaa;">${u.pot}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>

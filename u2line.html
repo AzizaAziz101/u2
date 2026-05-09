@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Liberty City Subway</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;overflow:hidden;font-family:'Courier New',monospace;}
+canvas{display:block;width:100vw;height:100vh;}
+#vig{position:fixed;inset:0;pointer-events:none;z-index:4;
+  background:radial-gradient(ellipse at 50% 52%,transparent 22%,rgba(0,0,0,.45) 60%,rgba(0,0,0,.92) 100%);}
+#hud{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+  z-index:10;color:rgba(255,245,200,.18);font-size:9px;letter-spacing:.3em;
+  text-transform:uppercase;pointer-events:none;}
+#stn{position:fixed;top:44%;left:50%;transform:translate(-50%,-50%);
+  z-index:10;color:rgba(255,245,200,0);font-size:16px;letter-spacing:.22em;
+  text-transform:uppercase;pointer-events:none;transition:color 1.4s;}
+#stn.show{color:rgba(255,245,200,.5);}
+
+/* ── NAV PANEL ── */
+#nav{position:fixed;right:20px;top:50%;transform:translateY(-50%);z-index:20;
+  background:rgba(4,4,6,.75);border:1px solid rgba(255,245,200,.1);
+  border-radius:16px;overflow:hidden;}
+.ni{display:flex;align-items:center;gap:9px;padding:10px 14px;cursor:pointer;
+  border-bottom:1px solid rgba(255,245,200,.06);transition:background .18s;}
+.ni:last-child{border-bottom:none;}
+.ni:hover{background:rgba(255,245,200,.05);}
+.ni.on{background:rgba(200,255,0,.07);}
+.nd{width:7px;height:7px;border-radius:50%;border:1.5px solid rgba(255,245,200,.28);
+  flex-shrink:0;transition:all .18s;}
+.ni:hover .nd{border-color:rgba(255,245,200,.6);}
+.ni.on .nd{background:rgba(200,255,0,.9);border-color:rgba(200,255,0,1);}
+.nl{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,245,200,.28);white-space:nowrap;transition:color .18s;}
+.ni:hover .nl{color:rgba(255,245,200,.6);}
+.ni.on .nl{color:rgba(200,255,0,.8);}
+
+/* ── WORLD MARKERS ── */
+#mk{position:fixed;inset:0;z-index:15;pointer-events:none;}
+.m{position:absolute;transform:translate(-50%,-50%);pointer-events:all;cursor:pointer;}
+.mb{display:flex;align-items:center;gap:6px;
+  background:rgba(3,3,5,.75);border:1px solid rgba(255,245,200,.18);
+  border-radius:16px;padding:4px 10px 4px 6px;transition:all .18s;}
+.m:hover .mb{border-color:rgba(200,255,0,.65);transform:scale(1.06);}
+.md{width:6px;height:6px;border-radius:50%;background:rgba(255,245,200,.38);
+  flex-shrink:0;transition:background .18s;}
+.m:hover .md{background:rgba(200,255,0,1);}
+.ml{font-size:8px;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(255,245,200,.5);white-space:nowrap;}
+.m:hover .ml{color:rgba(200,255,0,.9);}
+.mr{position:absolute;top:50%;left:50%;
+  width:32px;height:32px;border-radius:50%;
+  border:1px solid rgba(255,245,200,.12);
+  animation:pu 2.4s ease-out infinite;pointer-events:none;
+  transform:translate(-50%,-50%);}
+@keyframes pu{0%{opacity:.5;transform:translate(-50%,-50%) scale(.5);}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.8);}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vig"></div>
+<div id="mk"></div>
+<div id="hud">Liberty City Transit &nbsp;·&nbsp; Frankfort Ave Line</div>
+<div id="stn"></div>
+
+<div id="nav">
+  <div class="ni on" data-v="standing" onclick="goV('standing')"><div class="nd"></div><div class="nl">Mittelgang</div></div>
+  <div class="ni"    data-v="seat"     onclick="goV('seat')"    ><div class="nd"></div><div class="nl">Fahrgastsitz</div></div>
+  <div class="ni"    data-v="screen"   onclick="goV('screen')"  ><div class="nd"></div><div class="nl">Bildschirm</div></div>
+  <div class="ni"    data-v="window"   onclick="goV('window')"  ><div class="nd"></div><div class="nl">Fenster</div></div>
+  <div class="ni"    data-v="door"     onclick="goV('door')"    ><div class="nd"></div><div class="nl">Wagontür</div></div>
+</div>
+
+<!-- cdnjs is faster and more reliable than unpkg -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+if(!window.THREE){
+  document.body.innerHTML='<p style="color:#fff;padding:2rem;font-family:monospace">Bitte mit Live Server öffnen: Rechtsklick auf index.html → Open with Live Server</p>';
+  throw new Error('no three');
+}
+
+// ── RENDERER ──────────────────────────────────────────────────
+var cv=document.getElementById('c');
+var W=window.innerWidth,H=window.innerHeight;
+var renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.setSize(W,H);
+renderer.toneMapping=THREE.ReinhardToneMapping;
+renderer.toneMappingExposure=0.8;
+
+var scene=new THREE.Scene();
+scene.background=new THREE.Color(0x020203);
+scene.fog=new THREE.FogExp2(0x020203,.042);
+
+var camera=new THREE.PerspectiveCamera(70,W/H,.04,80);
+camera.rotation.order='YXZ';
+
+window.addEventListener('resize',function(){
+  W=window.innerWidth;H=window.innerHeight;
+  renderer.setSize(W,H);camera.aspect=W/H;
+  camera.updateProjectionMatrix();updMK();
+});
+
+// ── FAST TEXTURES ─────────────────────────────────────────────
+// Small canvases = fast generation
+function mkTex(w,h,fn,rS,rT){
+  var c=document.createElement('canvas');c.width=w;c.height=h;
+  fn(c.getContext('2d'),w,h);
+  var t=new THREE.CanvasTexture(c);
+  if(rS){t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rS,rT||rS);}
+  return t;
+}
+
+// Wall — 256px, simple tiles + stripe
+var tWall=mkTex(256,128,function(ctx,w,h){
+  ctx.fillStyle='#b6b2a9';ctx.fillRect(0,0,w,h);
+  for(var x=0;x<w;x+=42)for(var y=0;y<h;y+=30){
+    var v=172+(Math.random()*12|0);
+    ctx.fillStyle='rgb('+v+','+(v-4)+','+(v-10)+')';ctx.fillRect(x+1,y+1,40,28);
+  }
+  ctx.strokeStyle='rgba(26,22,16,.4)';ctx.lineWidth=1;
+  for(var x2=0;x2<w;x2+=42){ctx.beginPath();ctx.moveTo(x2,0);ctx.lineTo(x2,h);ctx.stroke();}
+  for(var y2=0;y2<h;y2+=30){ctx.beginPath();ctx.moveTo(0,y2);ctx.lineTo(w,y2);ctx.stroke();}
+  // dirt streaks
+  for(var i=0;i<8;i++){ctx.fillStyle='rgba(0,0,0,'+(0.06+Math.random()*.14)+')';ctx.fillRect(Math.random()*w,0,1+Math.random()*2,h);}
+  // colour stripe
+  ctx.fillStyle='rgba(128,38,14,.78)';ctx.fillRect(0,h*.52,w,14);
+  // one graffiti word
+  ctx.font='bold 12px monospace';
+  ctx.save();ctx.translate(60,80);ctx.rotate(-.1);ctx.fillStyle='rgba(70,28,12,.48)';ctx.fillText('NIKO',0,0);ctx.restore();
+});
+
+// Floor — tiny, repeated
+var tFloor=mkTex(128,128,function(ctx,w,h){
+  ctx.fillStyle='#0a0908';ctx.fillRect(0,0,w,h);
+  for(var i=0;i<25;i++){
+    ctx.fillStyle='rgba(0,0,0,'+(0.2+Math.random()*.35)+')';
+    ctx.beginPath();ctx.ellipse(Math.random()*w,Math.random()*h,1+Math.random()*9,.5+Math.random()*2,Math.random()*Math.PI,0,Math.PI*2);ctx.fill();
+  }
+},2,7);
+
+// Ceiling
+var tCeil=mkTex(128,64,function(ctx,w,h){
+  ctx.fillStyle='#9c9690';ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='rgba(0,0,0,.16)';ctx.lineWidth=1;
+  for(var x=0;x<w;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+  for(var y=0;y<h;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+});
+
+// Seat fabric
+var tSeat=mkTex(64,64,function(ctx,w,h){
+  ctx.fillStyle='#641c10';ctx.fillRect(0,0,w,h);
+  for(var i=0;i<w;i+=2){ctx.fillStyle='rgba(0,0,0,'+(0.03+Math.random()*.06)+')';ctx.fillRect(i,0,1,h);}
+});
+
+// Info screen
+var tScreen=mkTex(256,144,function(ctx,w,h){
+  ctx.fillStyle='#070b12';ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='#0f1a26';ctx.fillRect(4,4,w-8,h-8);
+  ctx.fillStyle='rgba(200,255,0,.88)';ctx.fillRect(4,4,w-8,20);
+  ctx.fillStyle='#050810';ctx.font='bold 10px monospace';ctx.fillText('  LIBERTY CITY TRANSIT',8,17);
+  ctx.fillStyle='#c8ff00';ctx.font='bold 10px monospace';ctx.fillText('NEXT STATION',12,42);
+  ctx.fillStyle='#fff';ctx.font='bold 22px monospace';ctx.fillText('BROKER',12,68);
+  ctx.fillStyle='rgba(255,255,255,.2)';ctx.font='8px monospace';ctx.fillText('LINE A · ALGONQUIN ▶ BROKER ▶ DUKES',12,85);
+  ctx.fillStyle='rgba(255,255,255,.07)';ctx.fillRect(12,96,w-24,3);
+  ctx.fillStyle='#c8ff00';ctx.fillRect(12,96,(w-24)*.44,3);
+  ctx.fillStyle='rgba(255,255,255,.14)';ctx.font='8px monospace';ctx.fillText('EST. ARRIVAL  2 MIN',12,h-8);
+  for(var s=0;s<h;s+=2){ctx.fillStyle='rgba(0,0,0,.05)';ctx.fillRect(0,s,w,1);}
+});
+
+// ── SCENE DIMS ────────────────────────────────────────────────
+var CL=20,CW=1.6,CH=2.15,FY=-1.0,CYL=FY+CH;
+// CW=1.6 → total width 3.2m (realistic Berlin U-Bahn interior)
+
+var M=new THREE.MeshStandardMaterial; // dummy
+
+function mat(opts){return new THREE.MeshStandardMaterial(opts);}
+function addP(w,h,m,px,py,pz,rx,ry){
+  var o=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);
+  o.position.set(px,py,pz);if(rx)o.rotation.x=rx;if(ry)o.rotation.y=ry;scene.add(o);return o;
+}
+function addB(w,h,d,m,px,py,pz){
+  var o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
+  o.position.set(px,py,pz);scene.add(o);return o;
+}
+
+// ── SURFACES ──────────────────────────────────────────────────
+addP(CW*2,CL+3,mat({map:tFloor,roughness:.97}),0,FY,-(CL/2-2),-Math.PI/2);
+addP(CW*2,CL+3,mat({map:tCeil,roughness:.88}),0,CYL,-(CL/2-2),Math.PI/2);
+
+// Walls: lower tile + upper plain panel
+var mWall=mat({map:tWall,roughness:.9});
+var mPanel=mat({color:0x8e8880,roughness:.85});
+var wallH=CH*.58,panH=CH*.42;
+addP(CL+3,wallH,mWall,-CW,FY+wallH/2,-(CL/2-2),0,Math.PI/2);
+addP(CL+3,panH,mPanel,-CW,FY+wallH+panH/2,-(CL/2-2),0,Math.PI/2);
+addP(CL+3,wallH,mWall,CW,FY+wallH/2,-(CL/2-2),0,-Math.PI/2);
+addP(CL+3,panH,mPanel,CW,FY+wallH+panH/2,-(CL/2-2),0,-Math.PI/2);
+
+// dado rail
+var mMetal=mat({color:0x282420,metalness:.55,roughness:.65});
+addB(CW*2+.04,.04,.04,mMetal,0,FY+wallH,-(CL/2-2));
+
+// End walls
+var mEnd=mat({color:0x424038,roughness:.82});
+addP(CW*2,CH,mEnd,0,FY+CH/2,-CL+2);
+var bwm=new THREE.Mesh(new THREE.PlaneGeometry(CW*2,CH),mEnd);
+bwm.rotation.y=Math.PI;bwm.position.set(0,FY+CH/2,3.8);scene.add(bwm);
+
+// ── STRUCTURAL RIBS ───────────────────────────────────────────
+var mRib=mat({color:0x2a2622,metalness:.5,roughness:.7});
+for(var rz=-CL+2;rz<=2;rz+=2.8){
+  addB(CW*2+.04,.055,.07,mRib,0,CYL,rz);
+  addB(.055,CH,.07,mRib,-CW,FY+CH/2,rz);
+  addB(.055,CH,.07,mRib,CW,FY+CH/2,rz);
+}
+
+// ── DOOR ──────────────────────────────────────────────────────
+var mDoor=mat({color:0x262218,metalness:.45,roughness:.65});
+addB(.52,1.9,.06,mDoor,-.52,FY+.95,-CL+2.02);
+addB(.52,1.9,.06,mDoor, .52,FY+.95,-CL+2.02);
+// centre gap strip
+addB(.03,1.9,.06,mat({color:0x080810,metalness:.7}),0,FY+.95,-CL+2.01);
+// door windows
+[-.52,.52].forEach(function(dx){
+  var dg=new THREE.Mesh(new THREE.PlaneGeometry(.42,.52),mat({color:0x02030a,transparent:true,opacity:.9,roughness:.03}));
+  dg.position.set(dx,FY+1.65,-CL+2.04);scene.add(dg);
+});
+
+// ── WINDOWS ───────────────────────────────────────────────────
+var mWF=mat({color:0x1e1c18,metalness:.48,roughness:.72});
+var mWG=mat({color:0x020408,transparent:true,opacity:.88,roughness:.04,metalness:.12});
+var mSill=mat({color:0x222018,metalness:.35,roughness:.75});
+[-1.1,-3.5,-5.9,-8.3,-10.7,-13.1,-15.5].forEach(function(wz){
+  [-1,1].forEach(function(s){
+    var x=s*CW,d=-s;
+    addB(.065,.9,1.18,mWF,x,FY+1.08,wz);
+    addB(.065,.05,1.18,mSill,x,FY+.62,wz);
+    var gl=new THREE.Mesh(new THREE.PlaneGeometry(1.1,.78),mWG);
+    gl.rotation.y=s>0?-Math.PI/2:Math.PI/2;
+    gl.position.set(x+d*.025,FY+1.08,wz);scene.add(gl);
+  });
+});
+
+// ── SEATS — full bench rows, tight against walls ──────────────
+// Real subway: bench seats, no gap, wall-to-pole distance ~50cm
+var mSeat=mat({map:tSeat,roughness:.9});
+var mSMet=mat({color:0x504840,metalness:.58,roughness:.5});
+var SW=.46,SD=.40;
+
+function seatRow(x,z,fd){
+  // cushion
+  var cu=new THREE.Mesh(new THREE.BoxGeometry(SW,.065,SD),mSeat);
+  cu.position.set(x,FY+.36,z);scene.add(cu);
+  // backrest
+  var ba=new THREE.Mesh(new THREE.BoxGeometry(SW,.58,.055),mSeat);
+  ba.position.set(x,FY+.68,z+fd*(SD/2-.02));scene.add(ba);
+  // metal dividers
+  [-SW/2,SW/2].forEach(function(ax){
+    var dv=new THREE.Mesh(new THREE.BoxGeometry(.035,.2,SD),mSMet);
+    dv.position.set(x+ax,FY+.36,z);scene.add(dv);
+  });
+}
+
+// Pack seats tightly — step = SW + 2mm gap
+var step=SW+.02;
+for(var sz=-.3;sz>-CL+1.5;sz-=step){
+  seatRow(-CW+SW/2+.06,sz, 1);  // left wall
+  seatRow( CW-SW/2-.06,sz,-1);  // right wall
+}
+
+// ── GRAB POLES ONLY — no straps ──────────────────────────────
+var mPole=mat({color:0x8a7e6a,metalness:.82,roughness:.24});
+// Two ceiling rails
+[-0.4,0.4].forEach(function(rx){
+  var r=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,CL+3,8),mPole);
+  r.rotation.x=Math.PI/2;r.position.set(rx,CYL-.22,-(CL/2-2));scene.add(r);
+});
+// Vertical poles every 2.8m
+for(var pz2=1.2;pz2>-CL+1;pz2-=2.8){
+  [-0.4,0.4].forEach(function(px){
+    var p=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,CH-.1,8),mPole);
+    p.position.set(px,FY+CH/2,pz2);scene.add(p);
+  });
+}
+
+// ── INFO SCREEN ───────────────────────────────────────────────
+var scrMesh=new THREE.Mesh(
+  new THREE.PlaneGeometry(.9,.5),
+  mat({map:tScreen,emissive:0x081018,emissiveIntensity:.85,roughness:.08})
+);
+scrMesh.rotation.y=Math.PI/2;
+scrMesh.position.set(-CW+.03,FY+1.5,-5.2);scene.add(scrMesh);
+// frame
+addB(.03,.56,.94,mat({color:0x181412,metalness:.55,roughness:.6}),-CW,FY+1.5,-5.2);
+// subtle glow
+var scrGlow=new THREE.PointLight(0x081828,.5,2);
+scrGlow.position.set(-CW+.3,FY+1.5,-5.2);scene.add(scrGlow);
+
+// ── CEILING LIGHTS ────────────────────────────────────────────
+var mLive=mat({color:0xfff0bc,emissive:0xffe898,emissiveIntensity:.52});
+var mDead=mat({color:0x242220});
+var flickers=[];
+for(var lz2=.6;lz2>-CL+1;lz2-=2.8){
+  var dead=Math.random()<.09,flk=!dead&&Math.random()<.18;
+  var lm=dead?mDead:mLive.clone();
+  addB(1.1,.05,.14,lm,0,CYL-.03,lz2);
+  if(!dead){
+    var pl=new THREE.PointLight(new THREE.Color(1,.87,.61),flk?.44:.56,6);
+    pl.position.set(0,CYL-.14,lz2);scene.add(pl);
+    if(flk)flickers.push({pl:pl,mat:lm,ph:Math.random()*Math.PI*2});
+  }
+}
+scene.add(new THREE.AmbientLight(0x161407,2.5));
+var fillL=new THREE.PointLight(0x2e2208,.22,6);fillL.position.set(0,FY+.1,-3);scene.add(fillL);
+
+// ── AD PANELS — minimal, 3 only ──────────────────────────────
+[{bg:'#8B1A1A',fg:'#FFD700',t:['BURGER SHOT','NOW OPEN','555-0147'],z:-2.2,s:-1},
+ {bg:'#192850',fg:'#D8D0BC',t:['LIBERTY BAIL','BONDS','We help.'],z:-7.5,s:-1},
+ {bg:'#261600',fg:'#C08828',t:['SPRUNK','REFRESHING','1952'],z:-4.8,s:1},
+].forEach(function(a){
+  var at=mkTex(160,76,function(ctx,w,h){
+    ctx.fillStyle=a.bg;ctx.fillRect(0,0,w,h);
+    ctx.fillStyle=a.fg;ctx.font='bold 13px monospace';
+    a.t.forEach(function(l,i){ctx.fillText(l,7,18+i*19);});
+    for(var i=0;i<6;i++){ctx.fillStyle='rgba(0,0,0,'+(0.12+Math.random()*.2)+')';ctx.fillRect(Math.random()*w,Math.random()*h,2+Math.random()*18,1+Math.random()*3);}
+  });
+  var ap=new THREE.Mesh(new THREE.PlaneGeometry(.65,.3),mat({map:at,roughness:.88}));
+  ap.rotation.y=a.s>0?-Math.PI/2:Math.PI/2;
+  ap.position.set(a.s*CW+(-a.s)*.03,CYL-.32,a.z);scene.add(ap);
+});
+
+// ── TUNNEL (simple — just dark cylinder) ─────────────────────
+var tnl=new THREE.Mesh(
+  new THREE.CylinderGeometry(4.6,4.6,300,12,1,true),
+  mat({color:0x050403,side:THREE.BackSide,roughness:1})
+);
+tnl.rotation.x=Math.PI/2;tnl.position.set(0,FY+.4,-70);scene.add(tnl);
+// tunnel lights — fewer, brighter
+for(var ti=0;ti<30;ti++){
+  var tb=new THREE.Mesh(new THREE.SphereGeometry(.04,4,4),
+    mat({color:0xff5500,emissive:0xff3200,emissiveIntensity:2.5}));
+  tb.position.set(0,FY+1.7,-ti*6-5);scene.add(tb);
+}
+
+// ── VIEWS ─────────────────────────────────────────────────────
+var FY2=FY; // alias
+var VIEWS={
+  standing:{pos:[0,FY2+.9,1.5],   look:[0,FY2+.85,-14]},
+  seat:    {pos:[-CW+.62,FY2+.72,-2.8], look:[.15,FY2+.82,-10]},
+  screen:  {pos:[-CW+.95,FY2+1.5,-5.2],look:[-CW-.12,FY2+1.5,-5.2]},
+  window:  {pos:[-CW+.5,FY2+.9,-5.9],  look:[-CW-2.5,FY2+.92,-5.9]},
+  door:    {pos:[0,FY2+.92,-CL+4.5],   look:[0,FY2+.9,-CL-.5]},
+};
+var curV='standing';
+var tP=VIEWS.standing.pos.slice(),tL=VIEWS.standing.look.slice();
+camera.position.set(tP[0],tP[1],tP[2]);
+camera.lookAt(new THREE.Vector3(tL[0],tL[1],tL[2]));
+
+window.goV=function(name){
+  if(!VIEWS[name]||name===curV)return;
+  curV=name;
+  tP=VIEWS[name].pos.slice();tL=VIEWS[name].look.slice();
+  document.querySelectorAll('.ni').forEach(function(d){d.classList.toggle('on',d.dataset.v===name);});
+  updMK();
+};
+
+// ── CSS MARKERS ───────────────────────────────────────────────
+var MKS=[
+  {v:'standing',w:new THREE.Vector3(0,FY2+1.05,.8),  l:'Mittelgang'},
+  {v:'seat',    w:new THREE.Vector3(-CW+.52,FY2+.9,-2.8),l:'Fahrgastsitz'},
+  {v:'screen',  w:new THREE.Vector3(-CW+.18,FY2+1.5,-5.2),l:'Bildschirm'},
+  {v:'window',  w:new THREE.Vector3(-CW+.25,FY2+1.08,-5.9),l:'Fenster'},
+  {v:'door',    w:new THREE.Vector3(0,FY2+1.05,-CL+5),l:'Wagontür'},
+];
+var mkDiv=document.getElementById('mk'),mEls=[];
+MKS.forEach(function(m){
+  var el=document.createElement('div');el.className='m';
+  el.innerHTML='<div class="mr"></div><div class="mb"><div class="md"></div><div class="ml">'+m.l+'</div></div>';
+  el.addEventListener('click',function(){goV(m.v);});
+  mkDiv.appendChild(el);mEls.push({el:el,w:m.w,v:m.v});
+});
+
+var _v3=new THREE.Vector3();
+var cP=new THREE.Vector3(),cL=new THREE.Vector3();
+cP.set(tP[0],tP[1],tP[2]);cL.set(tL[0],tL[1],tL[2]);
+
+function updMK(){
+  mEls.forEach(function(m){
+    if(m.v===curV){m.el.style.display='none';return;}
+    _v3.copy(m.w).project(camera);
+    var sx=(_v3.x*.5+.5)*W,sy=(-.5*_v3.y+.5)*H;
+    var mg=50;
+    if(_v3.z>1||sx<mg||sx>W-mg||sy<mg||sy>H-mg){m.el.style.display='none';return;}
+    m.el.style.display='flex';m.el.style.left=sx+'px';m.el.style.top=sy+'px';
+  });
+}
+
+// ── STATIONS ──────────────────────────────────────────────────
+var stnEl=document.getElementById('stn');
+var STNS=['ALGONQUIN','BROKER','DUKES','BOHAN','CHARGE ISLAND'];
+var stIdx=0,lastStT=-25;
+function showStn(){
+  stnEl.textContent=STNS[stIdx%STNS.length];stnEl.classList.add('show');
+  setTimeout(function(){stnEl.classList.remove('show');},3500);stIdx++;
+}
+
+// ── ANIMATE ───────────────────────────────────────────────────
+var clock=new THREE.Clock(),T=0,tnlOff=0;
+
+function animate(){
+  requestAnimationFrame(animate);
+  var dt=Math.min(clock.getDelta(),.05);T+=dt;
+
+  var cyc=T%35,spd=14;
+  if(cyc>28)spd=14*Math.max(0,(35-cyc)/7);
+  else if(cyc<5)spd=14*Math.min(1,cyc/5);
+  if(spd<1.2&&T-lastStT>10){lastStT=T;showStn();}
+
+  // minimal vibration
+  var bump=Math.sin(T*36)*.002+Math.sin(T*21)*.001;
+  var sway=Math.sin(T*1.8)*.003+Math.sin(T*.65)*.002;
+
+  // smooth camera lerp
+  cP.lerp(new THREE.Vector3(tP[0],tP[1],tP[2]),.07);
+  cL.lerp(new THREE.Vector3(tL[0],tL[1],tL[2]),.07);
+
+  camera.position.set(cP.x+sway,cP.y+bump,cP.z);
+  camera.lookAt(cL.x+sway*.3,cL.y+bump*.2,cL.z);
+  camera.rotation.z=sway*.03;
+
+  updMK();
+
+  tnlOff=(tnlOff+spd*dt)%6;tnl.position.z=-70+tnlOff;
+
+  flickers.forEach(function(f){
+    var fv=T*13+f.ph;
+    var on=Math.sin(fv)*Math.sin(fv*3.1)*Math.sin(fv*6.8)>-.5;
+    f.pl.intensity=on?.42+Math.abs(Math.sin(fv*1.6))*.16:0;
+    f.mat.emissiveIntensity=on?.38:0;
+  });
+
+  renderer.render(scene,camera);
+}
+animate();
+</script>
+</body>
+</html>

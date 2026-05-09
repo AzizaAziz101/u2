@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Studio Transit — UX Agentur</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0e0906;overflow:hidden;font-family:'Courier New',monospace;}
+canvas{display:block;width:100vw;height:100vh;}
+
+#vig{position:fixed;inset:0;pointer-events:none;z-index:4;
+  background:radial-gradient(ellipse at 50% 50%,transparent 32%,rgba(8,5,2,.22) 60%,rgba(5,3,1,.80) 100%);}
+
+/* ── LOGO ── */
+#logo{position:fixed;top:22px;left:24px;z-index:20;pointer-events:none;}
+#logo .l1{font-size:10px;letter-spacing:.42em;color:rgba(255,235,185,.72);text-transform:uppercase;}
+#logo .l2{font-size:7px;letter-spacing:.24em;color:rgba(170,248,70,.48);text-transform:uppercase;margin-top:4px;}
+
+/* ── FOOTER ── */
+#hud{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  z-index:10;display:flex;gap:24px;align-items:center;pointer-events:none;}
+#hud a{color:rgba(255,235,185,.2);text-decoration:none;font-size:9px;letter-spacing:.28em;
+  text-transform:uppercase;pointer-events:all;transition:color .22s;cursor:pointer;
+  padding:6px 0;}
+#hud a:hover{color:rgba(170,248,70,.65);}
+#hud span{color:rgba(255,235,185,.1);font-size:8px;}
+
+/* ── STATION ── */
+#stn{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:10;color:rgba(255,235,185,0);font-size:12px;letter-spacing:.38em;
+  text-transform:uppercase;pointer-events:none;transition:color 1.6s;}
+#stn.show{color:rgba(255,235,185,.22);}
+
+/* ── NAV — minimal, text only, bigger hit targets ── */
+#nav{position:fixed;right:24px;top:50%;transform:translateY(-50%);z-index:20;
+  display:flex;flex-direction:column;gap:0;}
+.ni{display:flex;align-items:center;gap:12px;padding:10px 0;cursor:pointer;
+  border:none;background:none;transition:opacity .18s;opacity:.35;}
+.ni:hover{opacity:.75;}
+.ni.on{opacity:1;}
+.nb{width:14px;height:1px;background:rgba(255,235,185,.2);flex-shrink:0;transition:all .22s;}
+.ni.on .nb{width:22px;background:rgba(170,248,70,.9);}
+.ni:hover .nb{background:rgba(255,235,185,.5);}
+.nl{font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(255,235,185,.65);white-space:nowrap;transition:color .18s;}
+.ni.on .nl{color:rgba(170,248,70,.95);}
+
+/* ── MARKERS — dot + label, larger touch area ── */
+#mk{position:fixed;inset:0;z-index:15;pointer-events:none;}
+.m{position:absolute;transform:translate(-50%,-50%);pointer-events:all;cursor:pointer;
+  display:flex;align-items:center;gap:8px;padding:8px;}
+.md{width:6px;height:6px;border-radius:50%;border:1px solid rgba(255,235,185,.45);
+  flex-shrink:0;transition:all .2s;background:transparent;}
+.m:hover .md{background:rgba(170,248,70,.9);border-color:rgba(170,248,70,1);
+  box-shadow:0 0 8px rgba(170,248,70,.4);}
+.ml{font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(255,235,185,.45);white-space:nowrap;transition:color .2s;
+  text-shadow:0 1px 8px rgba(0,0,0,.9);}
+.m:hover .ml{color:rgba(170,248,70,.95);}
+.mr{position:absolute;top:50%;left:8px;width:22px;height:22px;border-radius:50%;
+  border:1px solid rgba(255,235,185,.14);
+  animation:pu 3s ease-out infinite;pointer-events:none;
+  transform:translate(-50%,-50%);}
+@keyframes pu{
+  0%{opacity:.5;transform:translate(-50%,-50%) scale(.5);}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(2.2);}
+}
+
+/* ── REFERENZ PANEL ── */
+#ref{position:fixed;right:0;top:0;bottom:0;z-index:30;
+  pointer-events:none;opacity:0;
+  transition:opacity .28s,transform .28s;
+  transform:translateX(14px);}
+#ref.show{opacity:1;pointer-events:all;transform:translateX(0);}
+#ref-card{
+  width:290px;height:100%;
+  background:rgba(9,7,4,.90);
+  border-left:1px solid rgba(255,235,185,.07);
+  backdrop-filter:blur(14px);
+  display:flex;flex-direction:column;
+  overflow:hidden;position:relative;}
+#ref-scroll{flex:1;overflow-y:auto;padding:56px 26px 24px;
+  display:flex;flex-direction:column;gap:16px;
+  scrollbar-width:thin;scrollbar-color:rgba(170,248,70,.1) transparent;}
+#ref-tag{font-size:6px;letter-spacing:.48em;color:rgba(170,248,70,.5);text-transform:uppercase;}
+#ref-title{font-size:17px;color:rgba(255,235,185,.9);letter-spacing:.02em;line-height:1.2;font-weight:normal;}
+#ref-sub{font-size:8px;letter-spacing:.18em;color:rgba(255,235,185,.24);text-transform:uppercase;margin-top:-4px;}
+#ref-divider{height:1px;background:rgba(255,235,185,.06);margin:2px 0;}
+#ref-desc{font-size:11px;line-height:1.72;color:rgba(255,235,185,.48);font-family:sans-serif;letter-spacing:.01em;}
+#ref-tags{display:flex;flex-wrap:wrap;gap:5px;}
+.rt{font-size:7px;letter-spacing:.14em;text-transform:uppercase;padding:4px 9px;
+  border:1px solid rgba(255,235,185,.09);border-radius:2px;color:rgba(255,235,185,.30);}
+#ref-footer{padding:20px 26px;border-top:1px solid rgba(255,235,185,.06);
+  display:flex;flex-direction:column;gap:9px;}
+/* bigger action buttons */
+#ref-link{display:block;padding:13px 20px;
+  background:rgba(170,248,70,.09);border:1px solid rgba(170,248,70,.32);
+  border-radius:4px;color:rgba(170,248,70,.88);
+  font-size:9px;letter-spacing:.22em;text-transform:uppercase;text-decoration:none;
+  transition:all .2s;text-align:center;font-family:'Courier New',monospace;}
+#ref-link:hover{background:rgba(170,248,70,.18);border-color:rgba(170,248,70,.68);}
+#ref-close{display:block;padding:11px 20px;border:1px solid rgba(255,235,185,.08);
+  border-radius:4px;color:rgba(255,235,185,.28);font-size:9px;letter-spacing:.22em;
+  text-transform:uppercase;cursor:pointer;transition:all .2s;background:none;
+  font-family:'Courier New',monospace;text-align:center;}
+#ref-close:hover{border-color:rgba(255,235,185,.25);color:rgba(255,235,185,.6);}
+#ref-x{position:absolute;top:16px;right:16px;z-index:2;
+  width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:rgba(255,235,185,.28);font-size:14px;
+  border-radius:50%;border:1px solid rgba(255,235,185,.08);
+  transition:all .2s;background:rgba(9,7,4,.65);}
+#ref-x:hover{color:rgba(255,235,185,.7);border-color:rgba(255,235,185,.25);}
+
+/* ── IMPRESSUM ── */
+#imp{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;opacity:0;transition:opacity .22s;}
+#imp.show{opacity:1;pointer-events:all;}
+#imp-bg{position:absolute;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(5px);}
+#imp-box{position:relative;z-index:1;
+  background:rgba(9,7,4,.97);border:1px solid rgba(255,235,185,.07);
+  border-radius:8px;width:min(460px,88vw);max-height:74vh;overflow-y:auto;
+  padding:32px;
+  scrollbar-width:thin;scrollbar-color:rgba(170,248,70,.12) transparent;}
+#imp-box h2{font-size:9px;letter-spacing:.42em;color:rgba(170,248,70,.62);text-transform:uppercase;margin-bottom:20px;}
+#imp-box h3{font-size:8.5px;letter-spacing:.28em;color:rgba(255,235,185,.4);text-transform:uppercase;margin:16px 0 7px;}
+#imp-box p{font-size:10.5px;line-height:1.82;color:rgba(255,235,185,.36);font-family:sans-serif;}
+#imp-box a{color:rgba(170,248,70,.52);text-decoration:none;}
+#imp-close{margin-top:24px;display:inline-block;padding:10px 20px;
+  border:1px solid rgba(255,235,185,.1);border-radius:4px;
+  color:rgba(255,235,185,.35);font-size:9px;letter-spacing:.22em;
+  text-transform:uppercase;cursor:pointer;transition:all .2s;background:none;
+  font-family:'Courier New',monospace;}
+#imp-close:hover{border-color:rgba(255,235,185,.28);color:rgba(255,235,185,.65);}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vig"></div>
+<div id="mk"></div>
+
+<div id="logo">
+  <div class="l1">Studio Transit</div>
+  <div class="l2">UX · Interface · Strategy</div>
+</div>
+
+<div id="hud">
+  <a onclick="showImp('impressum')">Impressum</a>
+  <span>·</span>
+  <a onclick="showImp('datenschutz')">Datenschutz</a>
+</div>
+
+<div id="stn"></div>
+
+<div id="nav">
+  <div class="ni on" data-v="standing" onclick="goV('standing')"><div class="nb"></div><div class="nl">Übersicht</div></div>
+  <div class="ni"    data-v="seat"     onclick="goV('seat')"    ><div class="nb"></div><div class="nl">E-Commerce</div></div>
+  <div class="ni"    data-v="screen"   onclick="goV('screen')"  ><div class="nb"></div><div class="nl">Dashboard</div></div>
+  <div class="ni"    data-v="window"   onclick="goV('window')"  ><div class="nb"></div><div class="nl">Mobile App</div></div>
+  <div class="ni"    data-v="door"     onclick="goV('door')"    ><div class="nb"></div><div class="nl">Branding</div></div>
+</div>
+
+<div id="ref">
+  <div id="ref-card">
+    <div id="ref-x" onclick="closeRef()">✕</div>
+    <div id="ref-scroll">
+      <div id="ref-tag">Referenz</div>
+      <div id="ref-title">–</div>
+      <div id="ref-sub">–</div>
+      <div id="ref-divider"></div>
+      <div id="ref-desc">–</div>
+      <div id="ref-tags"></div>
+    </div>
+    <div id="ref-footer">
+      <a id="ref-link" href="#" target="_blank" rel="noopener">Website ansehen →</a>
+      <button id="ref-close" onclick="closeRef()">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<div id="imp">
+  <div id="imp-bg" onclick="closeImp()"></div>
+  <div id="imp-box">
+    <h2 id="imp-heading">–</h2>
+    <div id="imp-body"></div>
+    <button id="imp-close" onclick="closeImp()">Schließen</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+if(!window.THREE){
+  document.body.innerHTML='<p style="color:#fff;padding:2rem">Three.js konnte nicht geladen werden.</p>';
+  throw new Error('no three');
+}
+
+// ── DATA ──────────────────────────────────────────────────────
+var REFS={
+  standing:{title:'Studio Transit',sub:'UX Agentur · Gesamtüberblick',
+    desc:'Wir gestalten digitale Erlebnisse, die Menschen wirklich nutzen wollen. Von der ersten Skizze bis zum fertigen Produkt — strategisch, iterativ, nutzerzentriert.',
+    tags:['UX Strategy','Research','Prototyping','Design Systems'],
+    link:'https://example-agency.de',linkLabel:'Mehr erfahren →'},
+  seat:{title:'Heindl Watches',sub:'E-Commerce · Shopify Redesign',
+    desc:'UX-Redesign eines Schweizer Uhren-Onlineshops. Conversion-Rate +34 % durch optimierten Checkout-Flow und emotionalere Markenkommunikation.',
+    tags:['UX Research','Shopify','Conversion','UI Design'],
+    link:'https://heindl-watches.com',linkLabel:'Projekt ansehen →'},
+  screen:{title:'Velox Analytics',sub:'SaaS Dashboard · B2B',
+    desc:'Analyse-Dashboard für Logistikunternehmen. Rollenbasierte Ansichten und ein Design System für 12 Produktteams.',
+    tags:['Dashboard Design','Design System','Figma','Data Viz'],
+    link:'https://velox-analytics.io',linkLabel:'Case Study →'},
+  window:{title:'Roam',sub:'iOS & Android · 0→1 Product',
+    desc:'Reiseplanung neu gedacht: KI-Empfehlungen, Offline-Karten, Community. 40.000 Downloads in den ersten drei Monaten.',
+    tags:['Mobile UX','Research','Prototyping','iOS / Android'],
+    link:'https://roamapp.travel',linkLabel:'App ansehen →'},
+  door:{title:'Nordhavn Studio',sub:'Brand Identity · Web',
+    desc:'Brand-System für ein Kopenhagener Architekturbüro — Logo, Typographie, Fotografie-Richtlinien, minimalistische Website.',
+    tags:['Brand Identity','Web Design','Typography'],
+    link:'https://nordhavn.studio',linkLabel:'Website besuchen →'},
+};
+
+function openRef(v){
+  var r=REFS[v];if(!r)return;
+  document.getElementById('ref-title').textContent=r.title;
+  document.getElementById('ref-sub').textContent=r.sub;
+  document.getElementById('ref-desc').textContent=r.desc;
+  document.getElementById('ref-link').href=r.link;
+  document.getElementById('ref-link').textContent=r.linkLabel;
+  var tc=document.getElementById('ref-tags');tc.innerHTML='';
+  r.tags.forEach(function(t){var d=document.createElement('div');d.className='rt';d.textContent=t;tc.appendChild(d);});
+  document.getElementById('ref').classList.add('show');
+}
+function closeRef(){document.getElementById('ref').classList.remove('show');}
+
+var IMP={
+  impressum:{heading:'Impressum',body:'<h3>Angaben gemäß § 5 TMG</h3><p>Studio Transit GmbH<br>Musterstraße 42<br>10115 Berlin</p><h3>Kontakt</h3><p>E-Mail: <a href="mailto:hallo@studio-transit.de">hallo@studio-transit.de</a><br>Tel: +49 30 123 456 78</p><h3>Verantwortlich</h3><p>Max Mustermann, Geschäftsführer</p><h3>Haftung</h3><p>Inhalte sorgfältig erstellt. Keine Gewähr für Richtigkeit.</p>'},
+  datenschutz:{heading:'Datenschutz',body:'<h3>Verantwortlicher</h3><p>Studio Transit GmbH, Musterstraße 42, 10115 Berlin</p><h3>Datenerhebung</h3><p>Diese Website erhebt keine personenbezogenen Daten. Keine Cookies, kein Tracking.</p><h3>Hosting</h3><p>Server in der EU. Verbindungsdaten werden 7 Tage gespeichert.</p><h3>Ihre Rechte</h3><p>Auskunft, Löschung gemäß DSGVO: <a href="mailto:datenschutz@studio-transit.de">datenschutz@studio-transit.de</a></p>'},
+};
+window.showImp=function(t){var d=IMP[t];if(!d)return;document.getElementById('imp-heading').textContent=d.heading;document.getElementById('imp-body').innerHTML=d.body;document.getElementById('imp').classList.add('show');};
+window.closeImp=function(){document.getElementById('imp').classList.remove('show');};
+
+// ── RENDERER ──────────────────────────────────────────────────
+var cv=document.getElementById('c');
+var W=window.innerWidth,H=window.innerHeight;
+var renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.0));
+renderer.setSize(W,H);
+renderer.toneMapping=THREE.ReinhardToneMapping;
+renderer.toneMappingExposure=1.08;
+
+var scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0e0906);
+scene.fog=new THREE.FogExp2(0x0e0906,.034);
+
+var camera=new THREE.PerspectiveCamera(68,W/H,.04,60);
+camera.rotation.order='YXZ';
+
+window.addEventListener('resize',function(){
+  W=window.innerWidth;H=window.innerHeight;
+  renderer.setSize(W,H);camera.aspect=W/H;camera.updateProjectionMatrix();
+  mEls.forEach(function(m){m.sx=-1;m.sy=-1;});
+});
+
+// ── TEXTURES ──────────────────────────────────────────────────
+function mkTex(w,h,fn,rS,rT){
+  var c=document.createElement('canvas');c.width=w;c.height=h;
+  fn(c.getContext('2d'),w,h);
+  var t=new THREE.CanvasTexture(c);
+  if(rS){t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rS,rT||rS);}
+  return t;
+}
+
+var tWall=mkTex(256,128,function(ctx,w,h){
+  ctx.fillStyle='#cac3b8';ctx.fillRect(0,0,w,h);
+  for(var x=0;x<w;x+=64)for(var y=0;y<h;y+=48){
+    var v=188+(Math.random()*14|0);
+    ctx.fillStyle='rgb('+v+','+(v-5)+','+(v-12)+')';ctx.fillRect(x+.5,y+.5,63,47);
+  }
+  ctx.strokeStyle='rgba(0,0,0,.06)';ctx.lineWidth=.8;
+  for(var x2=0;x2<w;x2+=64){ctx.beginPath();ctx.moveTo(x2,0);ctx.lineTo(x2,h);ctx.stroke();}
+  for(var y2=0;y2<h;y2+=48){ctx.beginPath();ctx.moveTo(0,y2);ctx.lineTo(w,y2);ctx.stroke();}
+  ctx.fillStyle='rgba(170,248,70,.16)';ctx.fillRect(0,h*.55,w,6);
+});
+
+var tFloor=mkTex(128,128,function(ctx,w,h){
+  ctx.fillStyle='#131009';ctx.fillRect(0,0,w,h);
+  for(var x=0;x<w;x+=32)for(var y=0;y<h;y+=32){
+    var v=17+(Math.random()*6|0);
+    ctx.fillStyle='rgb('+v+','+(v-1)+','+(v-3)+')';ctx.fillRect(x+.5,y+.5,31,31);
+  }
+  ctx.strokeStyle='rgba(255,220,140,.025)';ctx.lineWidth=.5;
+  for(var x2=0;x2<w;x2+=32){ctx.beginPath();ctx.moveTo(x2,0);ctx.lineTo(x2,h);ctx.stroke();}
+  for(var y2=0;y2<h;y2+=32){ctx.beginPath();ctx.moveTo(0,y2);ctx.lineTo(w,y2);ctx.stroke();}
+},2,7);
+
+var tCeil=mkTex(128,64,function(ctx,w,h){
+  ctx.fillStyle='#e2dcd0';ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='rgba(0,0,0,.04)';ctx.lineWidth=.7;
+  for(var x=0;x<w;x+=64){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+  for(var y=0;y<h;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+});
+
+var tSeat=mkTex(64,64,function(ctx,w,h){
+  ctx.fillStyle='#2a2622';ctx.fillRect(0,0,w,h);
+  for(var i=0;i<w;i+=3){ctx.fillStyle='rgba(255,195,110,.02)';ctx.fillRect(i,0,1,h);}
+  for(var j=0;j<h;j+=4){ctx.fillStyle='rgba(0,0,0,.032)';ctx.fillRect(0,j,w,1);}
+});
+var MSEAT=new THREE.MeshStandardMaterial({map:tSeat,roughness:.9});
+var MSMET=new THREE.MeshStandardMaterial({color:0x686050,metalness:.5,roughness:.55});
+
+// Screen L — Dashboard
+var tScreenL=mkTex(256,144,function(ctx,w,h){
+  ctx.fillStyle='#050912';ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='rgba(170,248,70,.85)';ctx.fillRect(0,0,w,22);
+  ctx.fillStyle='#06090f';ctx.font='bold 10px monospace';ctx.fillText('VELOX ANALYTICS',10,15);
+  var metrics=[['3.2M',66],['98%',130],['12',194]];
+  metrics.forEach(function(m){
+    ctx.fillStyle='rgba(170,248,70,.9)';ctx.font='bold 22px monospace';ctx.fillText(m[0],m[1],72);
+    ctx.fillStyle='rgba(255,255,255,.35)';ctx.font='8px monospace';
+    ctx.fillText(['Nutzer','Uptime','Kunden'][metrics.indexOf(m)],m[1],88);
+  });
+  [.45,.62,.38,.78,.55,.90,.68,1.0,.82,.95].forEach(function(v,i){
+    ctx.fillStyle='rgba(170,248,70,'+(0.2+v*.5)+')';
+    ctx.fillRect(10+i*24,h-8-v*36,16,v*36);
+  });
+  for(var s=0;s<h;s+=2){ctx.fillStyle='rgba(0,0,0,.035)';ctx.fillRect(0,s,w,1);}
+});
+
+// Screen R — E-Commerce
+var tScreenR=mkTex(256,144,function(ctx,w,h){
+  ctx.fillStyle='#090604';ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='rgba(210,178,110,.82)';ctx.fillRect(0,0,w,22);
+  ctx.fillStyle='#0a0604';ctx.font='bold 10px monospace';ctx.fillText('HEINDL WATCHES',10,15);
+  var cx=72,cy=86,r=44;
+  ctx.strokeStyle='rgba(210,178,110,.45)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle='rgba(210,178,110,.2)';ctx.lineWidth=.8;
+  ctx.beginPath();ctx.arc(cx,cy,r-8,0,Math.PI*2);ctx.stroke();
+  for(var tk=0;tk<12;tk++){
+    var a=tk/12*Math.PI*2-Math.PI/2;
+    ctx.strokeStyle='rgba(210,178,110,.5)';ctx.lineWidth=tk%3===0?1.5:.7;
+    ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*(r-4),cy+Math.sin(a)*(r-4));
+    ctx.lineTo(cx+Math.cos(a)*(r-10),cy+Math.sin(a)*(r-10));ctx.stroke();
+  }
+  ctx.strokeStyle='rgba(210,178,110,.85)';ctx.lineWidth=1.8;
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx,cy-28);ctx.stroke();
+  ctx.strokeStyle='rgba(210,178,110,.7)';ctx.lineWidth=1.4;
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+20,cy+10);ctx.stroke();
+  ctx.fillStyle='rgba(210,178,110,.9)';ctx.font='bold 28px monospace';ctx.fillText('+34%',148,80);
+  ctx.fillStyle='rgba(255,255,255,.35)';ctx.font='8px monospace';ctx.fillText('Conversion',148,96);
+  for(var s2=0;s2<h;s2+=2){ctx.fillStyle='rgba(0,0,0,.032)';ctx.fillRect(0,s2,w,1);}
+});
+
+// ── SCENE ─────────────────────────────────────────────────────
+var CL=20,CW=1.6,CH=2.15,FY=-1.0,CYL=FY+CH;
+
+function mat(o){return new THREE.MeshStandardMaterial(o);}
+function addP(w,h,m,px,py,pz,rx,ry){
+  var o=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);
+  o.position.set(px,py,pz);if(rx)o.rotation.x=rx;if(ry)o.rotation.y=ry;scene.add(o);return o;
+}
+function addB(w,h,d,m,px,py,pz){
+  var o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
+  o.position.set(px,py,pz);scene.add(o);return o;
+}
+
+// ── SURFACES ──────────────────────────────────────────────────
+addP(CW*2,CL+3,mat({map:tFloor,roughness:.95}),0,FY,-(CL/2-2),-Math.PI/2);
+addP(CW*2,CL+3,mat({map:tCeil,roughness:.82,color:0xede8de}),0,CYL,-(CL/2-2),Math.PI/2);
+
+var mWall=mat({map:tWall,roughness:.87});
+var mPanel=mat({color:0xb8b0a4,roughness:.84});
+var wallH=CH*.6,panH=CH*.4;
+addP(CL+3,wallH,mWall,-CW,FY+wallH/2,-(CL/2-2),0,Math.PI/2);
+addP(CL+3,panH,mPanel,-CW,FY+wallH+panH/2,-(CL/2-2),0,Math.PI/2);
+addP(CL+3,wallH,mWall,CW,FY+wallH/2,-(CL/2-2),0,-Math.PI/2);
+addP(CL+3,panH,mPanel,CW,FY+wallH+panH/2,-(CL/2-2),0,-Math.PI/2);
+addB(CW*2+.04,.03,.03,mat({color:0xaaa29a,metalness:.72,roughness:.36}),0,FY+wallH,-(CL/2-2));
+
+var mEnd=mat({color:0x383430,roughness:.84});
+addP(CW*2,CH,mEnd,0,FY+CH/2,-CL+2);
+var bwm=new THREE.Mesh(new THREE.PlaneGeometry(CW*2,CH),mEnd);
+bwm.rotation.y=Math.PI;bwm.position.set(0,FY+CH/2,3.8);scene.add(bwm);
+
+// ── RIBS ──────────────────────────────────────────────────────
+var mRib=mat({color:0x908878,metalness:.58,roughness:.5});
+for(var rz=-CL+2;rz<=2;rz+=2.8){
+  addB(CW*2+.04,.04,.05,mRib,0,CYL,rz);
+  addB(.04,CH,.05,mRib,-CW,FY+CH/2,rz);
+  addB(.04,CH,.05,mRib,CW,FY+CH/2,rz);
+}
+
+// ── DOOR ──────────────────────────────────────────────────────
+var mDoor=mat({color:0x343028,metalness:.48,roughness:.6});
+addB(.52,1.9,.06,mDoor,-.52,FY+.95,-CL+2.02);
+addB(.52,1.9,.06,mDoor,.52,FY+.95,-CL+2.02);
+addB(.02,1.9,.06,mat({color:0x080508,metalness:.85}),0,FY+.95,-CL+2.01);
+[-.52,.52].forEach(function(dx){
+  var dg=new THREE.Mesh(new THREE.PlaneGeometry(.42,.52),mat({color:0x060d08,transparent:true,opacity:.88,roughness:.02}));
+  dg.position.set(dx,FY+1.65,-CL+2.04);scene.add(dg);
+});
+
+// ── WINDOWS ───────────────────────────────────────────────────
+var mWF=mat({color:0x585450,metalness:.48,roughness:.7});
+var mWG=mat({color:0x04080e,transparent:true,opacity:.85,roughness:.03,metalness:.22});
+var mSill=mat({color:0x787068,metalness:.4,roughness:.7});
+[-1.2,-3.6,-6.0,-10.8,-13.2,-15.6].forEach(function(wz){
+  addB(.05,.88,1.16,mWF,-CW,FY+1.08,wz);
+  addB(.05,.04,1.16,mSill,-CW,FY+.62,wz);
+  var gl=new THREE.Mesh(new THREE.PlaneGeometry(1.08,.76),mWG);
+  gl.rotation.y=Math.PI/2;gl.position.set(-CW+.02,FY+1.08,wz);scene.add(gl);
+});
+[-1.2,-6.0,-8.5,-10.8,-13.2,-15.6].forEach(function(wz){
+  addB(.05,.88,1.16,mWF,CW,FY+1.08,wz);
+  addB(.05,.04,1.16,mSill,CW,FY+.62,wz);
+  var gl=new THREE.Mesh(new THREE.PlaneGeometry(1.08,.76),mWG);
+  gl.rotation.y=-Math.PI/2;gl.position.set(CW-.02,FY+1.08,wz);scene.add(gl);
+});
+
+// ── SEATS — forward-facing, 2 left + 2 right ─────────────────
+// Seats face forward (-Z = direction of travel).
+// Each group: 2 seats side by side along X, one group facing -Z, one facing +Z per pair.
+// Arrangement per station (every ~1.1m along Z):
+//   Row A faces -Z (toward door end): backrest at +Z side of cushion
+//   Row B faces +Z (toward cab end):  backrest at -Z side of cushion
+//   A and B form a face-to-face pair with a small gap between them.
+//
+// Seat dimensions: SW=width per seat (X), SD=depth (Z), SH_BACK=backrest height
+// 2 seats side by side: total X = 2*SW + gap
+// Left group: centred at x = -CW + total_seat_width/2 + wall_gap
+// Right group: centred at x = +CW - total_seat_width/2 - wall_gap
+
+var SW=.44;   // width of one seat along X
+var SD=.38;   // depth of seat along Z (forward direction)
+var SG=.04;   // gap between the two side-by-side seats
+var WG=.08;   // gap from wall
+
+// x-centers of the two seat positions (left group)
+var SXL1=-CW+WG+SW/2;          // leftmost seat of left group
+var SXL2=-CW+WG+SW+SG+SW/2;    // rightmost seat of left group
+// x-centers right group (mirror)
+var SXR1= CW-WG-SW/2;
+var SXR2= CW-WG-SW-SG-SW/2;
+
+// face-to-face pairs repeat along Z; each pair = two rows (A faces -Z, B faces +Z)
+// pair pitch along Z: SD*2 + aisle_gap + pair_gap
+var AISLE=0.28;  // gap between face-to-face rows
+var PITCH=SD*2+AISLE+0.55; // distance between pair starts
+
+function addSeat(x,z,faceFwd){
+  // faceFwd=true  → seat faces -Z (toward door), backrest at +Z end
+  // faceFwd=false → seat faces +Z (toward cab),  backrest at -Z end
+  var bz=z+(faceFwd?SD/2-0.02:-(SD/2-0.02));
+
+  // cushion — box: width=SW, height=0.06, depth=SD
+  var cu=new THREE.Mesh(new THREE.BoxGeometry(SW,.06,SD),MSEAT);
+  cu.position.set(x,FY+.36,z);scene.add(cu);
+
+  // backrest — thin slab at one Z-end, taller
+  var ba=new THREE.Mesh(new THREE.BoxGeometry(SW,.52,.05),MSEAT);
+  ba.position.set(x,FY+.65,bz);scene.add(ba);
+
+  // armrest / end cap (small block at outer X edge)
+  var ar=new THREE.Mesh(new THREE.BoxGeometry(.04,.14,SD+.04),MSMET);
+  // outer edge x
+  var outerX=x+(x<0?-SW/2:SW/2);
+  ar.position.set(outerX,FY+.38,z);scene.add(ar);
+}
+
+// Place seat pairs along Z
+for(var pz=-.5;pz>-CL+2.5;pz-=PITCH){
+  // Row A: faces forward (-Z), backrest toward +Z
+  var zA=pz;
+  // Row B: faces backward (+Z), backrest toward -Z, placed AISLE behind row A
+  var zB=pz-SD-AISLE;
+
+  // Left group — 2 seats side by side at SXL1, SXL2
+  addSeat(SXL1,zA,true);
+  addSeat(SXL2,zA,true);
+  addSeat(SXL1,zB,false);
+  addSeat(SXL2,zB,false);
+
+  // Right group — 2 seats side by side at SXR1, SXR2
+  addSeat(SXR1,zA,true);
+  addSeat(SXR2,zA,true);
+  addSeat(SXR1,zB,false);
+  addSeat(SXR2,zB,false);
+
+  // shared inner divider between the two side-by-side seats (left and right group)
+  [[SXL1+SW/2+SG/2, zA],[SXL1+SW/2+SG/2, zB],
+   [SXR2+SW/2+SG/2, zA],[SXR2+SW/2+SG/2, zB]].forEach(function(pos){
+    var dv=new THREE.Mesh(new THREE.BoxGeometry(.04,.14,SD),MSMET);
+    dv.position.set(pos[0],FY+.38,pos[1]);scene.add(dv);
+  });
+}
+
+// ── GRAB POLES ────────────────────────────────────────────────
+// Poles at x=±0.35 — clearly in the open aisle corridor.
+// Seats end at x≈±0.82, so ±0.35 is well inside the free walkway.
+var mPole=mat({color:0xc4bcaa,metalness:.88,roughness:.18});
+var POLE_X=0.35;
+[-POLE_X,POLE_X].forEach(function(px){
+  var r=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,CL+3,8),mPole);
+  r.rotation.x=Math.PI/2;r.position.set(px,CYL-.22,-(CL/2-2));scene.add(r);
+});
+for(var pz2=1.2;pz2>-CL+1;pz2-=2.8){
+  [-POLE_X,POLE_X].forEach(function(px){
+    var p=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,CH-.14,8),mPole);
+    p.position.set(px,FY+CH/2,pz2);scene.add(p);
+  });
+}
+
+// ── CEILING LIGHT MODULES ─────────────────────────────────────
+// Modules at x=0, separated from poles at x=±0.72
+var mLightBox=mat({color:0x2a2820,metalness:.4,roughness:.7});
+var mDiffuser=mat({color:0xfff4e0,emissive:0xffe8b0,emissiveIntensity:.6,roughness:.5});
+var LC=new THREE.Color(1,.87,.68);
+for(var lz=.6;lz>-CL+1;lz-=5.6){
+  addB(.28,.06,.9,mLightBox,0,CYL-.01,lz);
+  addB(.22,.02,.84,mDiffuser,0,CYL-.05,lz);
+  var lpt=new THREE.PointLight(LC,.7,7.5);
+  lpt.position.set(0,CYL-.18,lz);scene.add(lpt);
+}
+scene.add(new THREE.AmbientLight(0x3a2608,3.6));
+var fillL=new THREE.PointLight(0x4a2e0a,.18,8);fillL.position.set(0,FY+.05,-4);scene.add(fillL);
+
+// ── SCREENS ───────────────────────────────────────────────────
+var sML=new THREE.Mesh(new THREE.PlaneGeometry(.9,.51),mat({map:tScreenL,emissive:0x050d1a,emissiveIntensity:.95,roughness:.05}));
+sML.rotation.y=Math.PI/2;sML.position.set(-CW+.025,FY+1.5,-8.5);scene.add(sML);
+addB(.025,.56,.94,mat({color:0x121210,metalness:.6,roughness:.5}),-CW,FY+1.5,-8.5);
+var sgL=new THREE.PointLight(0x0a1830,.38,2.2);sgL.position.set(-CW+.45,FY+1.5,-8.5);scene.add(sgL);
+
+var sMR=new THREE.Mesh(new THREE.PlaneGeometry(.9,.51),mat({map:tScreenR,emissive:0x1a0c04,emissiveIntensity:.95,roughness:.05}));
+sMR.rotation.y=-Math.PI/2;sMR.position.set(CW-.025,FY+1.5,-3.5);scene.add(sMR);
+addB(.025,.56,.94,mat({color:0x141210,metalness:.6,roughness:.5}),CW,FY+1.5,-3.5);
+var sgR=new THREE.PointLight(0x301408,.38,2.2);sgR.position.set(CW-.45,FY+1.5,-3.5);scene.add(sgR);
+
+// ── TUNNEL ────────────────────────────────────────────────────
+var tnl=new THREE.Mesh(
+  new THREE.CylinderGeometry(4.2,4.2,180,8,1,true),
+  mat({color:0x0a0705,side:THREE.BackSide,roughness:1})
+);
+tnl.rotation.x=Math.PI/2;tnl.position.set(0,FY+.4,-55);scene.add(tnl);
+for(var ti=0;ti<14;ti++){
+  var tb=new THREE.Mesh(new THREE.SphereGeometry(.035,4,4),
+    mat({color:0x70e010,emissive:0x50a808,emissiveIntensity:1.8}));
+  tb.position.set(0,FY+1.65,-ti*9-5);scene.add(tb);
+}
+
+// ── VIEWS ─────────────────────────────────────────────────────
+var VIEWS={
+  standing:{pos:[0,      FY+.88, 1.4],    look:[0,      FY+.84,-14]},
+  seat:    {pos:[CW-.9,  FY+1.5, -3.5],   look:[CW+.1,  FY+1.5, -3.5]},
+  screen:  {pos:[-CW+.9, FY+1.5, -8.5],   look:[-CW-.1, FY+1.5, -8.5]},
+  window:  {pos:[-CW+.45,FY+.9,  -6.0],   look:[-CW-2.4,FY+.9,  -6.0]},
+  door:    {pos:[0,      FY+.9,  -CL+4.5],look:[0,      FY+.88,-CL-.5]},
+};
+var curV='standing';
+var tP=VIEWS.standing.pos.slice(),tL=VIEWS.standing.look.slice();
+camera.position.set(tP[0],tP[1],tP[2]);
+camera.lookAt(new THREE.Vector3(tL[0],tL[1],tL[2]));
+
+window.goV=function(name){
+  if(!VIEWS[name])return;
+  if(name===curV){openRef(name);return;}
+  curV=name;
+  tP=VIEWS[name].pos.slice();tL=VIEWS[name].look.slice();
+  document.querySelectorAll('.ni').forEach(function(d){d.classList.toggle('on',d.dataset.v===name);});
+  mEls.forEach(function(m){m.sx=-1;m.sy=-1;});
+  if(window._refTimer)clearTimeout(window._refTimer);
+  window._refTimer=setTimeout(function(){openRef(name);},700);
+};
+
+// ── MARKERS ───────────────────────────────────────────────────
+var MKS=[
+  {v:'standing',w:new THREE.Vector3(0,      FY+1.05, .8),  l:'Übersicht'},
+  {v:'seat',    w:new THREE.Vector3(CW-.2,   FY+1.5, -3.5), l:'E-Commerce'},
+  {v:'screen',  w:new THREE.Vector3(-CW+.2,  FY+1.5, -8.5), l:'Dashboard'},
+  {v:'window',  w:new THREE.Vector3(-CW+.2,  FY+1.0, -6.0), l:'Mobile App'},
+  {v:'door',    w:new THREE.Vector3(0,       FY+1.05,-CL+5),l:'Branding'},
+];
+var mkDiv=document.getElementById('mk'),mEls=[];
+MKS.forEach(function(m){
+  var el=document.createElement('div');el.className='m';
+  el.innerHTML='<div class="mr"></div><div class="md"></div><div class="ml">'+m.l+'</div>';
+  el.addEventListener('click',function(){goV(m.v);});
+  mkDiv.appendChild(el);
+  mEls.push({el:el,w:m.w,v:m.v,sx:-1,sy:-1});
+});
+
+var _v3=new THREE.Vector3();
+var cP=new THREE.Vector3(tP[0],tP[1],tP[2]);
+var cLv=new THREE.Vector3(tL[0],tL[1],tL[2]);
+var MK_THR=0.5;
+
+function updMK(){
+  mEls.forEach(function(m){
+    if(m.v===curV){if(m.el.style.display!=='none')m.el.style.display='none';return;}
+    _v3.copy(m.w).project(camera);
+    var sx=(_v3.x*.5+.5)*W,sy=(-.5*_v3.y+.5)*H,mg=55;
+    if(_v3.z>1||sx<mg||sx>W-mg||sy<mg||sy>H-mg){
+      if(m.el.style.display!=='none')m.el.style.display='none';m.sx=-1;m.sy=-1;return;
+    }
+    if(m.el.style.display==='none')m.el.style.display='flex';
+    if(Math.abs(sx-m.sx)>MK_THR||Math.abs(sy-m.sy)>MK_THR){
+      m.el.style.left=sx+'px';m.el.style.top=sy+'px';m.sx=sx;m.sy=sy;
+    }
+  });
+}
+
+// ── STATIONS ──────────────────────────────────────────────────
+var stnEl=document.getElementById('stn');
+var STNS=['BERLIN MITTE','KREUZBERG','PRENZLAUER BERG','NEUKÖLLN','CHARLOTTENBURG'];
+var stIdx=0,lastStT=-25;
+function showStn(){
+  stnEl.textContent=STNS[stIdx%STNS.length];stnEl.classList.add('show');
+  setTimeout(function(){stnEl.classList.remove('show');},3000);stIdx++;
+}
+
+// ── ANIMATE ───────────────────────────────────────────────────
+var clock=new THREE.Clock(),T=0,tnlOff=0;
+var tPv=new THREE.Vector3(),tLv=new THREE.Vector3();
+
+function animate(){
+  requestAnimationFrame(animate);
+  var dt=Math.min(clock.getDelta(),.05);T+=dt;
+
+  var cyc=T%35,spd=13;
+  if(cyc>28)spd=13*Math.max(0,(35-cyc)/7);
+  else if(cyc<5)spd=13*Math.min(1,cyc/5);
+  if(spd<1.2&&T-lastStT>10){lastStT=T;showStn();}
+
+  tPv.set(tP[0],tP[1],tP[2]);tLv.set(tL[0],tL[1],tL[2]);
+  cP.lerp(tPv,.07);cLv.lerp(tLv,.07);
+  camera.position.copy(cP);
+  camera.lookAt(cLv);
+  camera.rotation.z=0;
+
+  updMK();
+  tnlOff=(tnlOff+spd*dt)%9;tnl.position.z=-55+tnlOff;
+  renderer.render(scene,camera);
+}
+animate();
+</script>
+</body>
+</html>

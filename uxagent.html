@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Studio Transit — UX Agentur</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0a0806;overflow:hidden;font-family:'Courier New',monospace;}
+canvas{display:block;width:100vw;height:100vh;}
+
+#vig{position:fixed;inset:0;pointer-events:none;z-index:4;
+  background:radial-gradient(ellipse at 50% 52%,transparent 30%,rgba(8,5,2,.28) 62%,rgba(6,4,1,.85) 100%);}
+
+#hud{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+  z-index:10;font-size:8px;letter-spacing:.28em;text-transform:uppercase;
+  pointer-events:none;display:flex;gap:24px;align-items:center;}
+#hud a{color:rgba(255,235,190,.18);text-decoration:none;letter-spacing:.28em;pointer-events:all;
+  transition:color .2s;cursor:pointer;}
+#hud a:hover{color:rgba(180,255,80,.7);}
+#hud span{color:rgba(255,235,190,.12);}
+
+#stn{position:fixed;top:44%;left:50%;transform:translate(-50%,-50%);
+  z-index:10;color:rgba(255,235,190,0);font-size:14px;letter-spacing:.3em;
+  text-transform:uppercase;pointer-events:none;transition:color 1.4s;
+  font-family:'Courier New',monospace;}
+#stn.show{color:rgba(255,235,190,.3);}
+
+#logo{position:fixed;top:20px;left:24px;z-index:20;pointer-events:none;}
+#logo .l1{font-size:11px;letter-spacing:.38em;color:rgba(255,235,190,.75);text-transform:uppercase;font-family:'Courier New',monospace;}
+#logo .l2{font-size:7.5px;letter-spacing:.22em;color:rgba(180,255,80,.55);text-transform:uppercase;margin-top:3px;font-family:'Courier New',monospace;}
+
+#nav{position:fixed;right:20px;top:50%;transform:translateY(-50%);z-index:20;
+  background:rgba(10,7,4,.82);border:1px solid rgba(255,235,190,.08);
+  border-radius:14px;overflow:hidden;backdrop-filter:blur(10px);}
+.ni{display:flex;align-items:center;gap:9px;padding:11px 16px;cursor:pointer;
+  border-bottom:1px solid rgba(255,235,190,.05);transition:background .18s;}
+.ni:last-child{border-bottom:none;}
+.ni:hover{background:rgba(255,235,190,.04);}
+.ni.on{background:rgba(180,255,80,.06);}
+.nd{width:7px;height:7px;border-radius:50%;border:1.5px solid rgba(255,235,190,.2);
+  flex-shrink:0;transition:all .18s;}
+.ni:hover .nd{border-color:rgba(255,235,190,.55);}
+.ni.on .nd{background:rgba(180,255,80,.9);border-color:rgba(180,255,80,1);}
+.nl{font-size:8px;letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(255,235,190,.25);white-space:nowrap;transition:color .18s;font-family:'Courier New',monospace;}
+.ni:hover .nl{color:rgba(255,235,190,.58);}
+.ni.on .nl{color:rgba(180,255,80,.8);}
+
+#mk{position:fixed;inset:0;z-index:15;pointer-events:none;}
+.m{position:absolute;transform:translate(-50%,-50%);pointer-events:all;cursor:pointer;}
+.mb{display:flex;align-items:center;gap:6px;
+  background:rgba(10,7,4,.82);border:1px solid rgba(255,235,190,.14);
+  border-radius:14px;padding:5px 11px 5px 7px;transition:all .2s;backdrop-filter:blur(6px);}
+.m:hover .mb{border-color:rgba(180,255,80,.6);transform:scale(1.05);}
+.md{width:5px;height:5px;border-radius:50%;background:rgba(255,235,190,.35);flex-shrink:0;transition:background .18s;}
+.m:hover .md{background:rgba(180,255,80,1);}
+.ml{font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,235,190,.45);white-space:nowrap;font-family:'Courier New',monospace;}
+.m:hover .ml{color:rgba(180,255,80,.9);}
+.mr{position:absolute;top:50%;left:50%;width:30px;height:30px;border-radius:50%;
+  border:1px solid rgba(255,235,190,.1);animation:pu 2.6s ease-out infinite;pointer-events:none;
+  transform:translate(-50%,-50%);}
+@keyframes pu{0%{opacity:.45;transform:translate(-50%,-50%) scale(.4);}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.9);}}
+
+#ref{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;opacity:0;transition:opacity .35s;}
+#ref.show{opacity:1;pointer-events:all;}
+#ref-bg{position:absolute;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);}
+#ref-card{position:relative;z-index:1;
+  background:rgba(10,8,5,.94);border:1px solid rgba(255,235,190,.1);
+  border-radius:20px;width:min(480px,90vw);padding:36px;
+  font-family:'Courier New',monospace;}
+#ref-tag{font-size:7px;letter-spacing:.4em;color:rgba(180,255,80,.7);text-transform:uppercase;margin-bottom:14px;}
+#ref-title{font-size:22px;color:rgba(255,235,190,.88);margin-bottom:8px;letter-spacing:.04em;line-height:1.25;}
+#ref-sub{font-size:9px;letter-spacing:.2em;color:rgba(255,235,190,.28);text-transform:uppercase;margin-bottom:20px;}
+#ref-desc{font-size:11px;line-height:1.75;color:rgba(255,235,190,.5);margin-bottom:28px;font-family:sans-serif;letter-spacing:.02em;}
+#ref-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:28px;}
+.rt{font-size:7.5px;letter-spacing:.16em;text-transform:uppercase;padding:4px 10px;
+  border:1px solid rgba(255,235,190,.1);border-radius:20px;color:rgba(255,235,190,.35);}
+#ref-link{display:inline-block;padding:11px 22px;background:rgba(180,255,80,.12);
+  border:1px solid rgba(180,255,80,.4);border-radius:10px;color:rgba(180,255,80,.9);
+  font-size:9px;letter-spacing:.24em;text-transform:uppercase;text-decoration:none;
+  transition:all .2s;margin-right:10px;}
+#ref-link:hover{background:rgba(180,255,80,.22);border-color:rgba(180,255,80,.8);}
+#ref-close{display:inline-block;padding:11px 18px;border:1px solid rgba(255,235,190,.1);
+  border-radius:10px;color:rgba(255,235,190,.3);font-size:9px;letter-spacing:.24em;
+  text-transform:uppercase;cursor:pointer;transition:all .2s;background:none;}
+#ref-close:hover{border-color:rgba(255,235,190,.3);color:rgba(255,235,190,.6);}
+
+#imp{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;opacity:0;transition:opacity .28s;}
+#imp.show{opacity:1;pointer-events:all;}
+#imp-bg{position:absolute;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);}
+#imp-box{position:relative;z-index:1;background:rgba(10,8,5,.96);border:1px solid rgba(255,235,190,.1);
+  border-radius:18px;width:min(520px,92vw);max-height:80vh;overflow-y:auto;
+  padding:36px;font-family:'Courier New',monospace;scrollbar-width:thin;scrollbar-color:rgba(180,255,80,.2) transparent;}
+#imp-box h2{font-size:10px;letter-spacing:.4em;color:rgba(180,255,80,.7);text-transform:uppercase;margin-bottom:20px;}
+#imp-box h3{font-size:9px;letter-spacing:.28em;color:rgba(255,235,190,.5);text-transform:uppercase;margin:18px 0 8px;}
+#imp-box p{font-size:10px;line-height:1.8;color:rgba(255,235,190,.38);font-family:sans-serif;}
+#imp-box a{color:rgba(180,255,80,.6);text-decoration:none;}
+#imp-close{margin-top:24px;display:inline-block;padding:9px 18px;border:1px solid rgba(255,235,190,.1);
+  border-radius:8px;color:rgba(255,235,190,.35);font-size:8px;letter-spacing:.24em;
+  text-transform:uppercase;cursor:pointer;transition:all .2s;background:none;}
+#imp-close:hover{border-color:rgba(255,235,190,.3);color:rgba(255,235,190,.6);}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vig"></div>
+<div id="mk"></div>
+
+<div id="logo">
+  <div class="l1">Studio Transit</div>
+  <div class="l2">UX · Interface · Strategy</div>
+</div>
+
+<div id="hud">
+  <a onclick="showImp('impressum')">Impressum</a>
+  <span>·</span>
+  <a onclick="showImp('datenschutz')">Datenschutz</a>
+</div>
+
+<div id="stn"></div>
+
+<div id="nav">
+  <div class="ni on" data-v="standing" onclick="goV('standing')"><div class="nd"></div><div class="nl">Übersicht</div></div>
+  <div class="ni"    data-v="seat"     onclick="goV('seat')"    ><div class="nd"></div><div class="nl">E-Commerce</div></div>
+  <div class="ni"    data-v="screen"   onclick="goV('screen')"  ><div class="nd"></div><div class="nl">Dashboard</div></div>
+  <div class="ni"    data-v="window"   onclick="goV('window')"  ><div class="nd"></div><div class="nl">Mobile App</div></div>
+  <div class="ni"    data-v="door"     onclick="goV('door')"    ><div class="nd"></div><div class="nl">Branding</div></div>
+</div>
+
+<div id="ref">
+  <div id="ref-bg" onclick="closeRef()"></div>
+  <div id="ref-card">
+    <div id="ref-tag">Referenz</div>
+    <div id="ref-title">–</div>
+    <div id="ref-sub">–</div>
+    <div id="ref-desc">–</div>
+    <div id="ref-tags"></div>
+    <a id="ref-link" href="#" target="_blank" rel="noopener">Website ansehen →</a>
+    <button id="ref-close" onclick="closeRef()">Schließen</button>
+  </div>
+</div>
+
+<div id="imp">
+  <div id="imp-bg" onclick="closeImp()"></div>
+  <div id="imp-box">
+    <h2 id="imp-heading">–</h2>
+    <div id="imp-body"></div>
+    <button id="imp-close" onclick="closeImp()">Schließen</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+if(!window.THREE){
+  document.body.innerHTML='<p style="color:#fff;padding:2rem;font-family:monospace">Three.js konnte nicht geladen werden.</p>';
+  throw new Error('no three');
+}
+
+// ── REFERENZ DATEN ────────────────────────────────────────────
+var REFS={
+  standing:{
+    title:'Studio Transit',sub:'UX Agentur — Gesamtüberblick',
+    desc:'Wir gestalten digitale Erlebnisse, die Menschen wirklich nutzen wollen. Von der ersten Skizze bis zum fertigen Produkt begleiten wir euch durch jeden Schritt des Designprozesses — strategisch, iterativ und nutzerzentriert.',
+    tags:['UX Strategy','Research','Prototyping','Design Systems'],link:'https://example-agency.de',linkLabel:'Mehr erfahren →'
+  },
+  seat:{
+    title:'Heindl Watches',sub:'E-Commerce · Shopify Redesign',
+    desc:'Vollständiges UX-Redesign eines Schweizer Uhren-Onlineshops. Conversion-Rate um 34 % gesteigert durch verbesserte Produktpräsentation, optimierten Checkout-Flow und emotionalere Markenkommunikation.',
+    tags:['UX Research','Shopify','Conversion Opt.','UI Design'],link:'https://heindl-watches.com',linkLabel:'Projekt ansehen →'
+  },
+  screen:{
+    title:'Velox Analytics',sub:'SaaS Dashboard · B2B Platform',
+    desc:'Design eines komplexen Analyse-Dashboards für Logistikunternehmen. Datenvisualisierung, rollenbasierte Ansichten und ein durchgängiges Design System für 12 Produktteams.',
+    tags:['Dashboard Design','Design System','Figma','Data Viz'],link:'https://velox-analytics.io',linkLabel:'Case Study →'
+  },
+  window:{
+    title:'Roam — Travel Companion',sub:'iOS & Android App · 0→1 Product',
+    desc:'Von der Marktrecherche bis zum App-Store-Launch. Reiseplanung neu gedacht: KI-gestützte Empfehlungen, Offline-Karten und eine Community-Funktion. Über 40.000 Downloads in den ersten drei Monaten.',
+    tags:['Mobile UX','User Research','Prototyping','iOS / Android'],link:'https://roamapp.travel',linkLabel:'App ansehen →'
+  },
+  door:{
+    title:'Nordhavn Studio',sub:'Brand Identity · Web Presence',
+    desc:'Komplettes Brand-System für ein Kopenhagener Architekturbüro — Logoentwicklung, Typographie-System, Fotografie-Richtlinien und eine minimalistische Website.',
+    tags:['Brand Identity','Web Design','Typography','Figma'],link:'https://nordhavn.studio',linkLabel:'Website besuchen →'
+  },
+};
+
+function openRef(v){
+  var r=REFS[v];if(!r)return;
+  document.getElementById('ref-title').textContent=r.title;
+  document.getElementById('ref-sub').textContent=r.sub;
+  document.getElementById('ref-desc').textContent=r.desc;
+  document.getElementById('ref-link').href=r.link;
+  document.getElementById('ref-link').textContent=r.linkLabel;
+  var tc=document.getElementById('ref-tags');tc.innerHTML='';
+  r.tags.forEach(function(t){var d=document.createElement('div');d.className='rt';d.textContent=t;tc.appendChild(d);});
+  document.getElementById('ref').classList.add('show');
+}
+function closeRef(){document.getElementById('ref').classList.remove('show');}
+
+var IMP_DATA={
+  impressum:{heading:'Impressum',body:'<h3>Angaben gemäß § 5 TMG</h3><p>Studio Transit GmbH<br>Musterstraße 42<br>10115 Berlin</p><h3>Kontakt</h3><p>E-Mail: <a href="mailto:hallo@studio-transit.de">hallo@studio-transit.de</a><br>Tel: +49 30 123 456 78</p><h3>Verantwortlich für den Inhalt</h3><p>Max Mustermann, Geschäftsführer<br>Studio Transit GmbH</p><h3>Haftungsausschluss</h3><p>Die Inhalte dieser Website wurden mit größtmöglicher Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen.</p>'},
+  datenschutz:{heading:'Datenschutzerklärung',body:'<h3>1. Verantwortlicher</h3><p>Studio Transit GmbH, Musterstraße 42, 10115 Berlin</p><h3>2. Erhebung von Daten</h3><p>Diese Website erhebt keine personenbezogenen Daten. Es werden keine Cookies gesetzt und kein Tracking durchgeführt.</p><h3>3. Hosting</h3><p>Diese Website wird auf Servern innerhalb der EU gehostet. Beim Aufruf der Website werden automatisch Verbindungsdaten (IP-Adresse, Zeitpunkt, Browser) im Server-Log gespeichert und nach 7 Tagen gelöscht.</p><h3>4. Ihre Rechte</h3><p>Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung Ihrer Daten gemäß DSGVO. Kontakt: <a href="mailto:datenschutz@studio-transit.de">datenschutz@studio-transit.de</a></p>'},
+};
+window.showImp=function(t){var d=IMP_DATA[t];if(!d)return;document.getElementById('imp-heading').textContent=d.heading;document.getElementById('imp-body').innerHTML=d.body;document.getElementById('imp').classList.add('show');};
+window.closeImp=function(){document.getElementById('imp').classList.remove('show');};
+
+// ── RENDERER ──────────────────────────────────────────────────
+var cv=document.getElementById('c');
+var W=window.innerWidth,H=window.innerHeight;
+var renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.setSize(W,H);
+renderer.toneMapping=THREE.ReinhardToneMapping;
+renderer.toneMappingExposure=1.05; // slightly brighter for warmth
+
+var scene=new THREE.Scene();
+scene.background=new THREE.Color(0x100a06); // warm dark brown, not cold black
+scene.fog=new THREE.FogExp2(0x100a06,.036);
+
+var camera=new THREE.PerspectiveCamera(70,W/H,.04,80);
+camera.rotation.order='YXZ';
+
+window.addEventListener('resize',function(){
+  W=window.innerWidth;H=window.innerHeight;
+  renderer.setSize(W,H);camera.aspect=W/H;camera.updateProjectionMatrix();
+  // reproject all markers on resize
+  mEls.forEach(function(m){m.sx=-1;m.sy=-1;});
+});
+
+// ── TEXTURES ──────────────────────────────────────────────────
+function mkTex(w,h,fn,rS,rT){
+  var c=document.createElement('canvas');c.width=w;c.height=h;
+  fn(c.getContext('2d'),w,h);
+  var t=new THREE.CanvasTexture(c);
+  if(rS){t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rS,rT||rS);}
+  return t;
+}
+
+// Wall — warm cream aluminium panels
+var tWall=mkTex(256,128,function(ctx,w,h){
+  ctx.fillStyle='#cfc8be';ctx.fillRect(0,0,w,h);
+  for(var x=0;x<w;x+=64)for(var y=0;y<h;y+=48){
+    var v=192+(Math.random()*12|0);
+    ctx.fillStyle='rgb('+v+','+(v-4)+','+(v-10)+')';ctx.fillRect(x+.5,y+.5,63,47);
+  }
+  ctx.strokeStyle='rgba(0,0,0,.07)';ctx.lineWidth=.8;
+  for(var x2=0;x2<w;x2+=64){ctx.beginPath();ctx.moveTo(x2,0);ctx.lineTo(x2,h);ctx.stroke();}
+  for(var y2=0;y2<h;y2+=48){ctx.beginPath();ctx.moveTo(0,y2);ctx.lineTo(w,y2);ctx.stroke();}
+  // warm accent stripe
+  ctx.fillStyle='rgba(180,255,80,.18)';ctx.fillRect(0,h*.54,w,7);
+  ctx.fillStyle='rgba(0,0,0,.05)';ctx.fillRect(0,h*.54+7,w,2);
+});
+
+// Floor — warm dark tile
+var tFloor=mkTex(128,128,function(ctx,w,h){
+  ctx.fillStyle='#14100c';ctx.fillRect(0,0,w,h);
+  for(var x=0;x<w;x+=32)for(var y=0;y<h;y+=32){
+    var v=18+(Math.random()*6|0);
+    ctx.fillStyle='rgb('+v+','+(v-1)+','+(v-3)+')';ctx.fillRect(x+.5,y+.5,31,31);
+  }
+  ctx.strokeStyle='rgba(255,220,150,.03)';ctx.lineWidth=.5;
+  for(var x2=0;x2<w;x2+=32){ctx.beginPath();ctx.moveTo(x2,0);ctx.lineTo(x2,h);ctx.stroke();}
+  for(var y2=0;y2<h;y2+=32){ctx.beginPath();ctx.moveTo(0,y2);ctx.lineTo(w,y2);ctx.stroke();}
+},2,7);
+
+// Ceiling — warm off-white
+var tCeil=mkTex(128,64,function(ctx,w,h){
+  ctx.fillStyle='#e6e0d6';ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='rgba(0,0,0,.04)';ctx.lineWidth=.7;
+  for(var x=0;x<w;x+=64){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+  for(var y=0;y<h;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+});
+
+// Seat — warm charcoal fabric (ONE texture, ONE material, shared)
+var tSeat=mkTex(64,64,function(ctx,w,h){
+  ctx.fillStyle='#2e2a26';ctx.fillRect(0,0,w,h);
+  // subtle corduroy weave — deterministic, no Math.random so texture is stable
+  for(var i=0;i<w;i+=3){
+    ctx.fillStyle='rgba(255,200,120,.022)';ctx.fillRect(i,0,1,h);
+  }
+  for(var j=0;j<h;j+=4){
+    ctx.fillStyle='rgba(0,0,0,.035)';ctx.fillRect(0,j,w,1);
+  }
+});
+// Single shared material — fixes texture flicker caused by per-mesh material instances
+var MSEAT=new THREE.MeshStandardMaterial({map:tSeat,roughness:.88});
+var MSMET=new THREE.MeshStandardMaterial({color:0x706056,metalness:.55,roughness:.5});
+
+// Screen LEFT — Dashboard (Velox Analytics)
+var tScreenL=mkTex(256,144,function(ctx,w,h){
+  ctx.fillStyle='#040812';ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='#070e1c';ctx.fillRect(4,4,w-8,h-8);
+  ctx.fillStyle='rgba(180,255,80,.9)';ctx.fillRect(4,4,w-8,18);
+  ctx.fillStyle='#050810';ctx.font='bold 9px monospace';ctx.fillText('  VELOX ANALYTICS — REFERENZ',8,15);
+  [[12,'3.2M','Users'],[90,'98.4','Uptime %'],[170,'12','Clients']].forEach(function(m){
+    ctx.fillStyle='rgba(255,255,255,.05)';ctx.fillRect(m[0],28,66,30);
+    ctx.fillStyle='rgba(180,255,80,.85)';ctx.font='bold 14px monospace';ctx.fillText(m[1],m[0]+6,46);
+    ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='7px monospace';ctx.fillText(m[2],m[0]+6,56);
+  });
+  ctx.strokeStyle='rgba(180,255,80,.6)';ctx.lineWidth=1.5;ctx.beginPath();
+  [0,.3,.18,.44,.29,.52,.38,.6,.48,.72,.55,.8,.65,.9,.78,1].forEach(function(v,i){
+    var x=12+i*(w-24)/15,y=h-14-(v*26);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });ctx.stroke();
+  ctx.fillStyle='rgba(180,255,80,.09)';ctx.lineTo(w-12,h-14);ctx.lineTo(12,h-14);ctx.closePath();ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.1)';ctx.font='7px monospace';ctx.fillText('velox-analytics.io',w-92,h-5);
+  for(var s=0;s<h;s+=2){ctx.fillStyle='rgba(0,0,0,.04)';ctx.fillRect(0,s,w,1);}
+});
+
+// Screen RIGHT — E-Commerce (Heindl Watches)
+var tScreenR=mkTex(256,144,function(ctx,w,h){
+  ctx.fillStyle='#080606';ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='#100c0a';ctx.fillRect(4,4,w-8,h-8);
+  ctx.fillStyle='rgba(210,180,120,.9)';ctx.fillRect(4,4,w-8,18);
+  ctx.fillStyle='#0a0604';ctx.font='bold 9px monospace';ctx.fillText('  HEINDL WATCHES — REFERENZ',8,15);
+  ctx.fillStyle='rgba(255,255,255,.04)';ctx.fillRect(12,28,100,82);
+  ctx.strokeStyle='rgba(210,180,120,.5)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.arc(62,68,26,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.arc(62,68,20,0,Math.PI*2);ctx.stroke();
+  ctx.strokeStyle='rgba(210,180,120,.8)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(62,68);ctx.lineTo(62,52);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(62,68);ctx.lineTo(74,72);ctx.stroke();
+  ctx.fillStyle='rgba(210,180,120,.85)';ctx.font='bold 11px monospace';
+  ctx.fillText('+34%',122,46);
+  ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='7px monospace';ctx.fillText('Conversion',122,57);
+  ctx.fillStyle='rgba(210,180,120,.85)';ctx.font='bold 11px monospace';ctx.fillText('Shopify',122,76);
+  ctx.fillStyle='rgba(255,255,255,.3)';ctx.font='7px monospace';ctx.fillText('Redesign',122,87);
+  ctx.fillStyle='rgba(210,180,120,.85)';ctx.font='bold 11px monospace';ctx.fillText('UX + UI',122,106);
+  ctx.fillStyle='rgba(255,255,255,.1)';ctx.font='7px monospace';ctx.fillText('heindl-watches.com',w-108,h-5);
+  for(var s2=0;s2<h;s2+=2){ctx.fillStyle='rgba(0,0,0,.04)';ctx.fillRect(0,s2,w,1);}
+});
+
+// ── SCENE DIMS ────────────────────────────────────────────────
+var CL=20,CW=1.6,CH=2.15,FY=-1.0,CYL=FY+CH;
+
+function mat(opts){return new THREE.MeshStandardMaterial(opts);}
+function addP(w,h,m,px,py,pz,rx,ry){
+  var o=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);
+  o.position.set(px,py,pz);if(rx)o.rotation.x=rx;if(ry)o.rotation.y=ry;scene.add(o);return o;
+}
+function addB(w,h,d,m,px,py,pz){
+  var o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
+  o.position.set(px,py,pz);scene.add(o);return o;
+}
+
+// ── SURFACES ──────────────────────────────────────────────────
+addP(CW*2,CL+3,mat({map:tFloor,roughness:.94}),0,FY,-(CL/2-2),-Math.PI/2);
+addP(CW*2,CL+3,mat({map:tCeil,roughness:.80,color:0xf0ebe0}),0,CYL,-(CL/2-2),Math.PI/2);
+
+var mWall =mat({map:tWall,roughness:.86});
+var mPanel=mat({color:0xbfb8ae,roughness:.82});
+var wallH=CH*.6,panH=CH*.4;
+addP(CL+3,wallH,mWall,-CW,FY+wallH/2,  -(CL/2-2),0, Math.PI/2);
+addP(CL+3,panH, mPanel,-CW,FY+wallH+panH/2,-(CL/2-2),0, Math.PI/2);
+addP(CL+3,wallH,mWall, CW,FY+wallH/2,  -(CL/2-2),0,-Math.PI/2);
+addP(CL+3,panH, mPanel, CW,FY+wallH+panH/2,-(CL/2-2),0,-Math.PI/2);
+
+var mMetal=mat({color:0xb0a898,metalness:.7,roughness:.38});
+addB(CW*2+.04,.04,.04,mMetal,0,FY+wallH,-(CL/2-2));
+
+var mEnd=mat({color:0x3c3830,roughness:.82});
+addP(CW*2,CH,mEnd,0,FY+CH/2,-CL+2);
+var bwm=new THREE.Mesh(new THREE.PlaneGeometry(CW*2,CH),mEnd);
+bwm.rotation.y=Math.PI;bwm.position.set(0,FY+CH/2,3.8);scene.add(bwm);
+
+// ── RIBS ──────────────────────────────────────────────────────
+var mRib=mat({color:0x989080,metalness:.6,roughness:.48});
+for(var rz=-CL+2;rz<=2;rz+=2.8){
+  addB(CW*2+.04,.05,.06,mRib,0,CYL,rz);
+  addB(.05,CH,.06,mRib,-CW,FY+CH/2,rz);
+  addB(.05,CH,.06,mRib, CW,FY+CH/2,rz);
+}
+
+// ── DOOR ──────────────────────────────────────────────────────
+var mDoor=mat({color:0x38342e,metalness:.5,roughness:.58});
+addB(.52,1.9,.06,mDoor,-.52,FY+.95,-CL+2.02);
+addB(.52,1.9,.06,mDoor, .52,FY+.95,-CL+2.02);
+addB(.025,1.9,.06,mat({color:0x080608,metalness:.8}),0,FY+.95,-CL+2.01);
+[-.52,.52].forEach(function(dx){
+  var dg=new THREE.Mesh(new THREE.PlaneGeometry(.42,.52),mat({color:0x08100a,transparent:true,opacity:.88,roughness:.02}));
+  dg.position.set(dx,FY+1.65,-CL+2.04);scene.add(dg);
+});
+
+// ── WINDOWS ───────────────────────────────────────────────────
+// Left wall: skip z≈-8.5 (screen L).  Right wall: skip z≈-3.5 (screen R).
+var mWF  =mat({color:0x5e5a52,metalness:.5,roughness:.68});
+var mWG  =mat({color:0x050810,transparent:true,opacity:.85,roughness:.03,metalness:.2});
+var mSill=mat({color:0x807870,metalness:.42,roughness:.68});
+
+[-1.2,-3.6,-6.0,-10.8,-13.2,-15.6].forEach(function(wz){ // left wall
+  addB(.06,.9,1.18,mWF,-CW,FY+1.08,wz);
+  addB(.06,.04,1.18,mSill,-CW,FY+.61,wz);
+  var gl=new THREE.Mesh(new THREE.PlaneGeometry(1.1,.78),mWG);
+  gl.rotation.y=Math.PI/2;gl.position.set(-CW+.022,FY+1.08,wz);scene.add(gl);
+});
+[-1.2,-6.0,-8.5,-10.8,-13.2,-15.6].forEach(function(wz){ // right wall
+  addB(.06,.9,1.18,mWF,CW,FY+1.08,wz);
+  addB(.06,.04,1.18,mSill,CW,FY+.61,wz);
+  var gl=new THREE.Mesh(new THREE.PlaneGeometry(1.1,.78),mWG);
+  gl.rotation.y=-Math.PI/2;gl.position.set(CW-.022,FY+1.08,wz);scene.add(gl);
+});
+
+// ── SEATS — Doppelbank, shared material ───────────────────────
+var SW=.46,SD=.40,GAP=.02;
+var benchHalfW=SW+GAP/2;
+
+function seatRow(xCenter,z,fd){
+  [-SW/2-GAP/2, SW/2+GAP/2].forEach(function(ox){
+    var sx=xCenter+ox;
+    // cushion — shared material MSEAT
+    var cu=new THREE.Mesh(new THREE.BoxGeometry(SW,.06,SD),MSEAT);
+    cu.position.set(sx,FY+.36,z);scene.add(cu);
+    // backrest — shared material MSEAT
+    var ba=new THREE.Mesh(new THREE.BoxGeometry(SW,.56,.05),MSEAT);
+    ba.position.set(sx,FY+.67,z+fd*(SD/2-.02));scene.add(ba);
+  });
+  var totalW=SW*2+GAP;
+  [-totalW/2,totalW/2].forEach(function(ax){
+    var dv=new THREE.Mesh(new THREE.BoxGeometry(.03,.18,SD),MSMET);
+    dv.position.set(xCenter+ax,FY+.36,z);scene.add(dv);
+  });
+  var cd=new THREE.Mesh(new THREE.BoxGeometry(.03,.14,SD),MSMET);
+  cd.position.set(xCenter,FY+.36,z);scene.add(cd);
+}
+
+var rowStep=SD+.08;
+for(var sz=-.3;sz>-CL+1.5;sz-=rowStep){
+  seatRow(-CW+benchHalfW+.06,sz, 1);
+  seatRow( CW-benchHalfW-.06,sz,-1);
+}
+
+// ── GRAB POLES ────────────────────────────────────────────────
+var mPole=mat({color:0xc8c0b0,metalness:.85,roughness:.2});
+[-0.4,0.4].forEach(function(rx){
+  var r=new THREE.Mesh(new THREE.CylinderGeometry(.016,.016,CL+3,8),mPole);
+  r.rotation.x=Math.PI/2;r.position.set(rx,CYL-.2,-(CL/2-2));scene.add(r);
+});
+for(var pz2=1.2;pz2>-CL+1;pz2-=2.8){
+  [-0.4,0.4].forEach(function(px){
+    var p=new THREE.Mesh(new THREE.CylinderGeometry(.016,.016,CH-.12,8),mPole);
+    p.position.set(px,FY+CH/2,pz2);scene.add(p);
+  });
+}
+
+// ── SCREENS ───────────────────────────────────────────────────
+// Left z=-8.5
+var sML=new THREE.Mesh(new THREE.PlaneGeometry(.88,.50),mat({map:tScreenL,emissive:0x040c18,emissiveIntensity:.9,roughness:.06}));
+sML.rotation.y=Math.PI/2;sML.position.set(-CW+.03,FY+1.48,-8.5);scene.add(sML);
+addB(.03,.54,.92,mat({color:0x141410,metalness:.6,roughness:.5}),-CW,FY+1.48,-8.5);
+var sgL=new THREE.PointLight(0x0a1828,.45,2.4);sgL.position.set(-CW+.4,FY+1.48,-8.5);scene.add(sgL);
+
+// Right z=-3.5
+var sMR=new THREE.Mesh(new THREE.PlaneGeometry(.88,.50),mat({map:tScreenR,emissive:0x180c04,emissiveIntensity:.9,roughness:.06}));
+sMR.rotation.y=-Math.PI/2;sMR.position.set(CW-.03,FY+1.48,-3.5);scene.add(sMR);
+addB(.03,.54,.92,mat({color:0x181210,metalness:.6,roughness:.5}),CW,FY+1.48,-3.5);
+var sgR=new THREE.PointLight(0x281808,.45,2.4);sgR.position.set(CW-.4,FY+1.48,-3.5);scene.add(sgR);
+
+// ── CEILING LIGHTS — warm, stable, no flicker ─────────────────
+// Warm white ~3000 K: 255,220,170
+var LIGHT_COLOR=new THREE.Color(1,.86,.67);
+var mLive=mat({color:0xfff0d0,emissive:0xffe8b8,emissiveIntensity:.55});
+var mDead=mat({color:0x282420});
+for(var lz2=.6;lz2>-CL+1;lz2-=2.8){
+  var dead=Math.random()<.03;
+  addB(1.0,.04,.12,dead?mDead:mLive,0,CYL-.025,lz2);
+  if(!dead){
+    var lpt=new THREE.PointLight(LIGHT_COLOR,.58,5.8);
+    lpt.position.set(0,CYL-.12,lz2);scene.add(lpt);
+  }
+}
+// Warm ambient — like a lit café, not a hospital
+scene.add(new THREE.AmbientLight(0x3d2810,3.2));
+// Soft warm fill from below (bounce light off warm floor)
+var fillL=new THREE.PointLight(0x4a2e10,.22,6);fillL.position.set(0,FY+.1,-3);scene.add(fillL);
+
+// ── AD PANELS ─────────────────────────────────────────────────
+[
+ {bg:'#0d1117',fg:'#b4ff50',t:['STUDIO','TRANSIT','UX Design Agency'],z:-2.6,s:-1},
+ {bg:'#111018',fg:'#e8e4dc',t:['NORDHAVN','STUDIO','Brand Identity'],  z:-4.4,s:1},
+ {bg:'#0a1108',fg:'#b4ff50',t:['ROAM APP','Travel UX','40K Downloads'],z:-11.2,s:-1},
+].forEach(function(a){
+  var at=mkTex(160,76,function(ctx,w,h){
+    ctx.fillStyle=a.bg;ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle='rgba(255,255,255,.06)';ctx.lineWidth=1;ctx.strokeRect(.5,.5,w-1,h-1);
+    ctx.fillStyle=a.fg;ctx.font='bold 13px monospace';
+    a.t.forEach(function(l,i){ctx.fillText(l,8,18+i*20);});
+    ctx.fillStyle='rgba(180,255,80,.14)';ctx.fillRect(0,h-12,w,12);
+  });
+  var ap=new THREE.Mesh(new THREE.PlaneGeometry(.64,.28),mat({map:at,roughness:.85,emissive:0x040804,emissiveIntensity:.28}));
+  ap.rotation.y=a.s>0?-Math.PI/2:Math.PI/2;
+  ap.position.set(a.s*CW+(-a.s)*.03,CYL-.3,a.z);scene.add(ap);
+});
+
+// ── TUNNEL ────────────────────────────────────────────────────
+var tnl=new THREE.Mesh(
+  new THREE.CylinderGeometry(4.6,4.6,300,12,1,true),
+  mat({color:0x0a0604,side:THREE.BackSide,roughness:1})
+);
+tnl.rotation.x=Math.PI/2;tnl.position.set(0,FY+.4,-70);scene.add(tnl);
+for(var ti=0;ti<28;ti++){
+  var tb=new THREE.Mesh(new THREE.SphereGeometry(.04,4,4),
+    mat({color:0x80ff20,emissive:0x60cc10,emissiveIntensity:2.0}));
+  tb.position.set(0,FY+1.7,-ti*6-5);scene.add(tb);
+}
+
+// ── VIEWS ─────────────────────────────────────────────────────
+var VIEWS={
+  standing:{pos:[0,       FY+.88, 1.4],    look:[0,       FY+.84,-14]},
+  seat:    {pos:[CW-.95,  FY+1.48,-3.5],    look:[CW+.12,  FY+1.48,-3.5]},
+  screen:  {pos:[-CW+.95, FY+1.48,-8.5],    look:[-CW-.12, FY+1.48,-8.5]},
+  window:  {pos:[-CW+.48, FY+.88, -6.0],    look:[-CW-2.5, FY+.9,  -6.0]},
+  door:    {pos:[0,       FY+.9,  -CL+4.5], look:[0,       FY+.88,-CL-.5]},
+};
+var curV='standing';
+var tP=VIEWS.standing.pos.slice(),tL=VIEWS.standing.look.slice();
+camera.position.set(tP[0],tP[1],tP[2]);
+camera.lookAt(new THREE.Vector3(tL[0],tL[1],tL[2]));
+
+window.goV=function(name){
+  if(!VIEWS[name])return;
+  if(name===curV){openRef(name);return;}
+  curV=name;
+  tP=VIEWS[name].pos.slice();tL=VIEWS[name].look.slice();
+  document.querySelectorAll('.ni').forEach(function(d){d.classList.toggle('on',d.dataset.v===name);});
+  // reset cached positions so markers recalculate fresh after view change
+  mEls.forEach(function(m){m.sx=-1;m.sy=-1;});
+  if(window._refTimer)clearTimeout(window._refTimer);
+  window._refTimer=setTimeout(function(){openRef(name);},700);
+};
+
+// ── CSS MARKERS — with pixel-change threshold ─────────────────
+var MKS=[
+  {v:'standing',w:new THREE.Vector3(0,       FY+1.05, .8),   l:'Übersicht'},
+  {v:'seat',    w:new THREE.Vector3(CW-.18,   FY+1.48,-3.5),  l:'E-Commerce'},
+  {v:'screen',  w:new THREE.Vector3(-CW+.18,  FY+1.48,-8.5),  l:'Dashboard'},
+  {v:'window',  w:new THREE.Vector3(-CW+.22,  FY+1.08,-6.0),  l:'Mobile App'},
+  {v:'door',    w:new THREE.Vector3(0,        FY+1.05,-CL+5), l:'Branding'},
+];
+var mkDiv=document.getElementById('mk'),mEls=[];
+MKS.forEach(function(m){
+  var el=document.createElement('div');el.className='m';
+  el.innerHTML='<div class="mr"></div><div class="mb"><div class="md"></div><div class="ml">'+m.l+'</div></div>';
+  el.addEventListener('click',function(){goV(m.v);});
+  mkDiv.appendChild(el);
+  // sx/sy cache — only write style when changed by >0.5px, prevents jitter
+  mEls.push({el:el,w:m.w,v:m.v,sx:-1,sy:-1});
+});
+
+var _v3=new THREE.Vector3();
+// Smooth camera lerp vectors
+var cP=new THREE.Vector3(tP[0],tP[1],tP[2]);
+var cLv=new THREE.Vector3(tL[0],tL[1],tL[2]);
+
+var MK_THRESHOLD=0.5; // px — don't update DOM unless marker moved this much
+
+function updMK(){
+  mEls.forEach(function(m){
+    if(m.v===curV){
+      if(m.el.style.display!=='none')m.el.style.display='none';
+      return;
+    }
+    _v3.copy(m.w).project(camera);
+    var sx=(_v3.x*.5+.5)*W, sy=(-.5*_v3.y+.5)*H;
+    var mg=55;
+    var outOfBounds=(_v3.z>1||sx<mg||sx>W-mg||sy<mg||sy>H-mg);
+    if(outOfBounds){
+      if(m.el.style.display!=='none')m.el.style.display='none';
+      m.sx=-1;m.sy=-1;
+      return;
+    }
+    if(m.el.style.display==='none')m.el.style.display='flex';
+    // only write to DOM if position changed meaningfully
+    if(Math.abs(sx-m.sx)>MK_THRESHOLD||Math.abs(sy-m.sy)>MK_THRESHOLD){
+      m.el.style.left=sx+'px';m.el.style.top=sy+'px';
+      m.sx=sx;m.sy=sy;
+    }
+  });
+}
+
+// ── STATIONS ──────────────────────────────────────────────────
+var stnEl=document.getElementById('stn');
+var STNS=['BERLIN — MITTE','KREUZBERG','PRENZLAUER BERG','NEUKÖLLN','CHARLOTTENBURG'];
+var stIdx=0,lastStT=-25;
+function showStn(){
+  stnEl.textContent=STNS[stIdx%STNS.length];stnEl.classList.add('show');
+  setTimeout(function(){stnEl.classList.remove('show');},3500);stIdx++;
+}
+
+// ── ANIMATE — no vibration ────────────────────────────────────
+var clock=new THREE.Clock(),T=0,tnlOff=0;
+
+function animate(){
+  requestAnimationFrame(animate);
+  var dt=Math.min(clock.getDelta(),.05);T+=dt;
+
+  // train speed cycle
+  var cyc=T%35,spd=13;
+  if(cyc>28)spd=13*Math.max(0,(35-cyc)/7);
+  else if(cyc<5)spd=13*Math.min(1,cyc/5);
+  if(spd<1.2&&T-lastStT>10){lastStT=T;showStn();}
+
+  // smooth camera lerp — pure, no vibration added
+  cP.lerp(new THREE.Vector3(tP[0],tP[1],tP[2]),.07);
+  cLv.lerp(new THREE.Vector3(tL[0],tL[1],tL[2]),.07);
+  camera.position.copy(cP);
+  camera.lookAt(cLv);
+  camera.rotation.z=0; // always level
+
+  updMK();
+
+  tnlOff=(tnlOff+spd*dt)%6;tnl.position.z=-70+tnlOff;
+
+  renderer.render(scene,camera);
+}
+animate();
+</script>
+</body>
+</html>

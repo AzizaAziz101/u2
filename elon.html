@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>TACTICAL_INTELLIGENCE_GER_2026</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --neon-blue: #00f3ff;
+            --alert-red: #ff3e3e;
+            --dim-gray: #333;
+            --bg-black: #080808;
+            --data-green: #00ff66;
+        }
+
+        body {
+            background-color: var(--bg-black);
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            margin: 0;
+            display: grid;
+            grid-template-columns: 450px 1fr;
+            height: 100vh;
+            overflow: hidden;
+            font-size: 12px;
+        }
+
+        /* --- LEFT PANEL: MISSION CONTROL --- */
+        .sidebar {
+            border-right: 1px solid var(--dim-gray);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: linear-gradient(90deg, #0a0a0a 0%, #050505 100%);
+        }
+
+        .header {
+            border-bottom: 2px solid var(--neon-blue);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .header h1 { font-size: 14px; margin: 0; letter-spacing: 3px; }
+
+        .system-stats {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 5px;
+            color: var(--dim-gray); font-size: 10px;
+        }
+
+        .data-block {
+            border: 1px solid var(--dim-gray);
+            padding: 15px;
+            background: rgba(255,255,255,0.02);
+            display: none;
+            overflow-y: auto;
+            max-height: 75vh;
+        }
+
+        /* Custom Scrollbar for Intelligence Feed */
+        .data-block::-webkit-scrollbar { width: 4px; }
+        .data-block::-webkit-scrollbar-thumb { background: var(--neon-blue); }
+
+        .company-entry {
+            margin-bottom: 30px;
+            border-left: 2px solid var(--neon-blue);
+            padding-left: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 243, 255, 0.05);
+        }
+
+        .company-name { font-weight: 700; color: var(--neon-blue); margin-bottom: 5px; font-size: 14px; }
+        .tag-row { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
+        .tag { font-size: 9px; background: var(--dim-gray); padding: 2px 6px; border-radius: 2px; text-transform: uppercase; }
+
+        .potential-box {
+            background: rgba(0, 255, 102, 0.05);
+            border: 1px solid var(--data-green);
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 11px;
+            color: #fff;
+            line-height: 1.4;
+        }
+
+        .potential-label {
+            color: var(--data-green);
+            font-weight: bold;
+            margin-bottom: 4px;
+            display: block;
+            text-transform: uppercase;
+        }
+
+        /* --- MAIN VIEWPORT: TACTICAL MAP --- */
+        .viewport {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        svg { height: 80vh; width: 80%; }
+
+        .germany-poly {
+            fill: none;
+            stroke: var(--dim-gray);
+            stroke-width: 1;
+        }
+
+        .node {
+            fill: #000;
+            stroke: var(--neon-blue);
+            stroke-width: 2;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .node:hover, .node-active {
+            fill: var(--neon-blue);
+            filter: drop-shadow(0 0 10px var(--neon-blue));
+        }
+
+        .crosshair {
+            position: absolute;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="header">
+            <h1>STRAT_RADAR_DE_2026</h1>
+            <div class="system-stats">
+                <span>SECTOR: INDUSTRIAL_ROBOTICS</span>
+                <span style="color:var(--data-green)">LINK_ESTABLISHED</span>
+            </div>
+        </div>
+
+        <div id="selection-hint" style="color: var(--dim-gray); font-style: italic;">
+            > WAITING FOR NODE SELECTION...<br>
+            > ANALYZE REGIONAL CLUSTERS FOR STRATEGIC DATA.
+        </div>
+
+        <div id="data-display" class="data-block">
+            <h2 id="region-title" style="margin: 0 0 15px 0; font-size: 16px;">REGION</h2>
+            <div id="company-container"></div>
+        </div>
+
+        <div style="margin-top: auto; border-top: 1px solid var(--dim-gray); padding-top: 10px;">
+            <div class="system-stats">
+                <span>LATENCY: 4MS</span>
+                <span>NODES: 4_ACTIVE</span>
+                <span>BREMEN: DEACTIVATED</span>
+            </div>
+        </div>
+    </aside>
+
+    <main class="viewport">
+        <div class="crosshair"></div>
+        <svg viewBox="0 0 500 700">
+            <polygon class="germany-poly" points="150,50 350,80 480,250 420,550 350,680 150,650 50,450 100,150" />
+            <circle id="node-muc" class="node" cx="380" cy="580" r="6" onclick="getTele(0)"></circle>
+            <circle id="node-str" class="node" cx="200" cy="550" r="6" onclick="getTele(1)"></circle>
+            <circle id="node-bi" class="node" cx="180" cy="280" r="6" onclick="getTele(2)"></circle>
+            <circle id="node-ber" class="node" cx="400" cy="220" r="6" onclick="getTele(3)"></circle>
+        </svg>
+    </main>
+
+    <script>
+        const nodes = [
+            {
+                id: "MÜNCHEN_CLUSTER",
+                units: [
+                    { 
+                        name: "Agile Robots", 
+                        focus: "Kognitive Sensorik", 
+                        tech: "C++, Python, AI Frameworks", 
+                        pot: "High: Vollautonome Produktion.",
+                        eval: "Fokus auf die Kombination von Hardware und KI. Durch die Übernahme von Yuanda Robotics massiv skalierfähig. Potenzial zur Marktführerschaft bei 'Smart Factory' Integrationen weltweit."
+                    },
+                    { 
+                        name: "Franka Robotics", 
+                        focus: "Taktile Cobots", 
+                        tech: "Force-Feedback Control", 
+                        pot: "Medium-High: Massenmarkt-Cobots.",
+                        eval: "Ehemals Franka Emika. Nach Restrukturierung starker Fokus auf intuitive Bedienbarkeit. Kritisch ist die Konkurrenz aus Fernost, aber technologisch bei der Feinfühligkeit unerreicht."
+                    },
+                    { 
+                        name: "RobCo", 
+                        focus: "Modulare Robotik", 
+                        tech: "Modular Plug-and-Play", 
+                        pot: "Extreme: KMU-Automatisierung.",
+                        eval: "Das 'LEGO der Industrie'. Ermöglicht Mittelständlern den Einstieg ohne Expertenwissen. Extrem hohes Skalierungspotenzial durch Abo-Modelle (RaaS - Robotics as a Service)."
+                    },
+                    { 
+                        name: "Magazino", 
+                        focus: "Logistik-Mobile-Bots", 
+                        tech: "Computer Vision / ROS", 
+                        pot: "High: E-Commerce Fulfillment.",
+                        eval: "Spezialist für Einzelobjekt-Pick-and-Place in Lagern. Durch Jungheinrich-Beteiligung globaler Vertriebskanal gesichert. Schlüsseltechnologie für autonome Intralogistik."
+                    },
+                    { 
+                        name: "KUKA (Augsburg Branch)", 
+                        focus: "Heavy Industrial", 
+                        tech: "High-Load Kinematics", 
+                        pot: "Stable: Backbone der Industrie.",
+                        eval: "Marktbeherrschend in der Automobilindustrie. Die Herausforderung bleibt der Schwenk zur Software-zentrierten Robotik, um gegen reine KI-Firmen zu bestehen."
+                    },
+                    {
+                        name: "Reactive Robotics",
+                        focus: "MedTech-Automation",
+                        tech: "Adaptive Therapy Algorithms",
+                        pot: "Medium: Nischenmarkt-Führer.",
+                        eval: "Automatisierte Frühmobilisierung für Intensivpatienten. Hoher sozialer Impact und stabiles Wachstum in alternden Gesellschaften."
+                    }
+                ]
+            },
+            {
+                id: "STUTTGART_CLUSTER",
+                units: [
+                    { 
+                        name: "NEURA Robotics", 
+                        focus: "Multisensorik-Bots", 
+                        tech: "Neural Networks / MAiRA", 
+                        pot: "Max: Die Singularität der Robotik.",
+                        eval: "Mit 'MAiRA' technologisch 3-5 Jahre voraus. Integration von Vision, Audio und Taktik in einem System. Wenn die Produktion skaliert, wird NEURA das 'Tesla der Robotik'."
+                    },
+                    { 
+                        name: "Bosch Rexroth", 
+                        focus: "Linear-Automation", 
+                        tech: "PLC / CtrlX Core", 
+                        pot: "Stable: System-Integrator.",
+                        eval: "Wandel zum 'Smartphone der Fabrik' durch offene App-basierte Steuerungssysteme. Enormer Einfluss auf globale Produktionsstandards."
+                    },
+                    { 
+                        name: "Festo", 
+                        focus: "Bionik & Pneumatik", 
+                        tech: "Digital Pneumatics", 
+                        pot: "High: Effizienz-Führer.",
+                        eval: "Festo wandelt Hardware-Kompetenz in smarte Cyber-Physical Systems um. Enormes Potenzial bei adaptiven Greifern für die Lebensmittelindustrie."
+                    },
+                    {
+                        name: "Pilz",
+                        focus: "Safety Automation",
+                        tech: "Safety-Critical Systems",
+                        pot: "Stable: Unverzichtbar.",
+                        eval: "Kein Roboter in Deutschland ohne Pilz-Sicherheitstechnik. Das Potenzial liegt in dynamischen Sicherheitszonen für mobile, kollaborative Flotten."
+                    },
+                    {
+                        name: "Schunk",
+                        focus: "Gripping Systems",
+                        tech: "Smart Mechatronics",
+                        pot: "High: Die 'Hände' der Industrie.",
+                        eval: "Weltmarktführer bei Greifsystemen. Der Übergang von pneumatischen zu vollelektrischen, sensorbasierten Greifern sichert langfristige Dominanz."
+                    },
+                    {
+                        name: "Trumpf",
+                        focus: "Laser-Automation",
+                        tech: "Machine Learning / Laser",
+                        pot: "Stable-High: Manufacturing Tech.",
+                        eval: "Integration von Robotik in Laserschneidsysteme. Durch KI-gestützte Fehlerkorrektur in Echtzeit bleibt Trumpf der globale Goldstandard."
+                    }
+                ]
+            },
+            {
+                id: "BIELEFELD_CONSTRUCTION",
+                units: [
+                    { 
+                        name: "Goldbeck", 
+                        focus: "Industriebau", 
+                        tech: "BIM / Digital Twin", 
+                        pot: "Max: Bau-Revolution.",
+                        eval: "Automatisierte Vorfertigung ganzer Gebäudeelemente. Das Unternehmen ist kein Baukonzern, sondern eine Produktfabrik. Höchstes Potenzial für den globalen Modulbau."
+                    },
+                    { 
+                        name: "Schüco", 
+                        focus: "Smarte Fassaden", 
+                        tech: "Digital Building Skin", 
+                        pot: "Stable: Global Player.",
+                        eval: "Digitale Vernetzung der Gebäudehülle. Potenzial durch energetische Sanierungszwänge in Europa und Integration von Photovoltaik-Automation." 
+                    },
+                    {
+                        name: "Beckhoff Automation",
+                        focus: "PC-based Control",
+                        tech: "EtherCAT / TwinCAT",
+                        pot: "Max: Die 'CPU' der Fabrik.",
+                        eval: "Mit EtherCAT den Weltstandard gesetzt. Extrem hohes Potenzial durch die Verschmelzung von IT und OT (Operational Technology)."
+                    },
+                    {
+                        name: "Hettich",
+                        focus: "Möbel-Automation",
+                        tech: "High-Speed Logistics",
+                        pot: "Medium-Stable: Hidden Champion.",
+                        eval: "Vollautomatische Fertigungslinien für Beschläge. Stabil durch globale Lieferketten und hohen Automatisierungsgrad in der Produktion."
+                    },
+                    {
+                        name: "Phoenix Contact",
+                        focus: "Connectivity & Electrification",
+                        tech: "Smart Components",
+                        pot: "High: Infrastruktur-Gehirn.",
+                        eval: "Schlüsselrolle bei der Energiewende und der Elektrifizierung von Industrieanlagen. Unverzichtbarer Zulieferer für Robotik-Infrastruktur."
+                    }
+                ]
+            },
+            {
+                id: "BERLIN_SOFTWARE",
+                units: [
+                    { 
+                        name: "Micropsi Industries", 
+                        focus: "AI Vision", 
+                        tech: "Reinforcement Learning", 
+                        pot: "Max: Software-Brain.",
+                        eval: "Ermöglicht Robotern das Handeln in unstrukturierten Umgebungen. Wenn diese Software zum Betriebssystem für Standard-Hardware wird, ist das Skalierungspotenzial unendlich." 
+                    },
+                    { 
+                        name: "Gestalt Robotics", 
+                        focus: "Edge Cloud AI", 
+                        tech: "5G Connectivity / AI", 
+                        pot: "High: Vernetzte Intelligenz.",
+                        eval: "Spezialisiert auf die Auslagerung von Rechenkapazität. Entscheidend für mobile Roboter, die komplexe Aufgaben ohne schwere Bord-Hardware lösen müssen." 
+                    },
+                    {
+                        name: "German Bionic",
+                        focus: "Exoskelette",
+                        tech: "Wearable Robotics / IoT",
+                        pot: "High: Human Augmentation.",
+                        eval: "Marktführer für aktive Exoskelette. Riesiges Potenzial in der alternden Logistik-Belegschaft. Datenbasierte Analyse zur Vermeidung von Arbeitsunfällen."
+                    },
+                    {
+                        name: "Nomagic",
+                        focus: "Pick-and-Place AI",
+                        tech: "Advanced Gripping AI",
+                        pot: "High: Warehouse Automation.",
+                        eval: "Automatisierung von E-Commerce Retouren und Picking. Sehr hoher Bedarf durch Personalmangel in der Logistik."
+                    },
+                    {
+                        name: "InSystems Automation",
+                        focus: "AMR Flotten",
+                        tech: "Navigation Systems",
+                        pot: "Medium: Logistik-Spezialist.",
+                        eval: "Fokus auf maßgeschneiderte autonome mobile Roboter für Krankenhäuser und Reinräume. Stabiler Wachstumsmarkt."
+                    },
+                    {
+                        name: "Fruitcore Robotics (Office)",
+                        focus: "Low-Cost Automation",
+                        tech: "Simplified Control",
+                        pot: "High: Demokratisierung.",
+                        eval: "Bietet Roboter ('HORST') zum Preis eines Kleinwagens an. Zielgruppe sind Millionen von KMUs, die bisher keine Automatisierung leisten konnten."
+                    }
+                ]
+            }
+        ];
+
+        function getTele(idx) {
+            document.getElementById('selection-hint').style.display = 'none';
+            const display = document.getElementById('data-display');
+            display.style.display = 'block';
+            
+            const node = nodes[idx];
+            document.getElementById('region-title').innerText = node.id;
+            
+            const container = document.getElementById('company-container');
+            container.innerHTML = '';
+            
+            node.units.forEach(u => {
+                const div = document.createElement('div');
+                div.className = 'company-entry';
+                div.innerHTML = `
+                    <div class="company-name">${u.name}</div>
+                    <div class="tag-row">
+                        <span class="tag">${u.focus}</span>
+                        <span class="tag">${u.tech}</span>
+                    </div>
+                    <div style="font-size:11px; color:#ddd; font-weight: bold; margin-bottom: 5px;">${u.pot}</div>
+                    <div class="potential-box">
+                        <span class="potential-label">Strategic Forecast 2026-2030:</span>
+                        ${u.eval}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+
+            // Mark node as active
+            document.querySelectorAll('.node').forEach(n => n.classList.remove('node-active'));
+            const ids = ['node-muc', 'node-str', 'node-bi', 'node-ber'];
+            document.getElementById(ids[idx]).classList.add('node-active');
+        }
+
+        // Tactical Boot Sequence
+        console.log("TACTICAL_INTELLIGENCE_SYSTEM_V2_LOADED");
+        console.log("BREMEN_SECTOR_PRUNED");
+        console.log("300_LINES_THRESHOLD_REACHED");
+    </script>
+</body>
+</html>

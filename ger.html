@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>TACTICAL_INTELLIGENCE_GER_2026</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --neon-blue: #00f3ff;
+            --alert-red: #ff3e3e;
+            --dim-gray: #333;
+            --bg-black: #080808;
+            --data-green: #00ff66;
+            --amber: #ffb800;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-black);
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            margin: 0;
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            height: 100vh;
+            overflow: hidden;
+            font-size: 12px;
+        }
+
+        /* ─── SCANLINE OVERLAY ─── */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0,0,0,0.08) 0px,
+                rgba(0,0,0,0.08) 1px,
+                transparent 1px,
+                transparent 3px
+            );
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* ─── SIDEBAR ─── */
+        .sidebar {
+            border-right: 1px solid #1a1a1a;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: linear-gradient(160deg, #0d0d0d 0%, #050505 100%);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--dim-gray) transparent;
+        }
+
+        .header {
+            border-bottom: 1px solid var(--neon-blue);
+            padding-bottom: 12px;
+        }
+
+        .header h1 {
+            font-size: 13px;
+            margin: 0 0 8px 0;
+            letter-spacing: 3px;
+            color: var(--neon-blue);
+        }
+
+        .system-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            font-size: 9px;
+            color: #444;
+        }
+
+        .system-stats span:last-child { color: var(--data-green); }
+
+        /* ─── LEGEND ─── */
+        .legend {
+            border: 1px solid #1e1e1e;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.01);
+        }
+
+        .legend-title {
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: #444;
+            margin-bottom: 8px;
+        }
+
+        .legend-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 9px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .legend-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            border: 1.5px solid var(--neon-blue);
+            background: transparent;
+            flex-shrink: 0;
+        }
+
+        .legend-dot.active { background: var(--neon-blue); }
+        .legend-dot.hamburg { border-color: var(--amber); }
+        .legend-dot.hamburg.active { background: var(--amber); }
+        .legend-dot.karlsruhe { border-color: #a855f7; }
+        .legend-dot.karlsruhe.active { background: #a855f7; }
+        .legend-dot.dresden { border-color: #f97316; }
+        .legend-dot.dresden.active { background: #f97316; }
+
+        /* ─── HINT ─── */
+        #selection-hint {
+            color: #333;
+            font-size: 10px;
+            line-height: 1.8;
+            animation: blink-cursor 1.2s step-end infinite;
+        }
+
+        @keyframes blink-cursor {
+            50% { opacity: 0.4; }
+        }
+
+        /* ─── DATA BLOCK ─── */
+        .data-block {
+            border: 1px solid #1e1e1e;
+            padding: 15px;
+            background: rgba(255,255,255,0.015);
+            display: none;
+            animation: fadeSlide 0.2s ease;
+        }
+
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateY(4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        #region-title {
+            margin: 0 0 12px 0;
+            font-size: 13px;
+            letter-spacing: 2px;
+        }
+
+        #region-sector {
+            font-size: 9px;
+            color: #444;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            border-left: 2px solid #222;
+            padding-left: 8px;
+        }
+
+        /* ─── COMPANY CARD ─── */
+        .company-entry {
+            margin-bottom: 16px;
+            border-left: 2px solid var(--neon-blue);
+            padding-left: 10px;
+        }
+
+        .company-entry.cluster-hamburg { border-left-color: var(--amber); }
+        .company-entry.cluster-karlsruhe { border-left-color: #a855f7; }
+        .company-entry.cluster-dresden { border-left-color: #f97316; }
+
+        .company-name {
+            font-weight: 700;
+            font-size: 11px;
+            color: var(--neon-blue);
+            margin-bottom: 5px;
+        }
+
+        .cluster-hamburg .company-name { color: var(--amber); }
+        .cluster-karlsruhe .company-name { color: #a855f7; }
+        .cluster-dresden .company-name { color: #f97316; }
+
+        .tag-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 7px; }
+
+        .tag {
+            font-size: 8px;
+            background: #141414;
+            border: 1px solid #222;
+            padding: 2px 6px;
+            border-radius: 2px;
+            color: #666;
+        }
+
+        .pot-label {
+            font-size: 9px;
+            color: #444;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 3px;
+        }
+
+        .pot-text {
+            font-size: 10px;
+            color: #888;
+            line-height: 1.5;
+        }
+
+        .pot-badge {
+            display: inline-block;
+            font-size: 8px;
+            padding: 1px 6px;
+            border-radius: 2px;
+            margin-bottom: 4px;
+            font-weight: 700;
+        }
+
+        .badge-max  { background: rgba(0,255,102,0.15); color: var(--data-green); border: 1px solid rgba(0,255,102,0.3); }
+        .badge-high { background: rgba(0,243,255,0.1);  color: var(--neon-blue);  border: 1px solid rgba(0,243,255,0.25); }
+        .badge-med  { background: rgba(255,184,0,0.1);  color: var(--amber);       border: 1px solid rgba(255,184,0,0.2); }
+        .badge-stab { background: rgba(255,255,255,0.05); color: #555;             border: 1px solid #222; }
+
+        /* ─── FOOTER ─── */
+        .sidebar-footer {
+            margin-top: auto;
+            border-top: 1px solid #151515;
+            padding-top: 10px;
+        }
+
+        /* ─── VIEWPORT ─── */
+        .viewport {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Subtle grid bg */
+        .viewport::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,243,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,243,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        svg {
+            height: 85vh;
+            width: auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .germany-poly {
+            fill: rgba(0,243,255,0.02);
+            stroke: #1e1e1e;
+            stroke-width: 1.5;
+        }
+
+        /* ─── NODES ─── */
+        .node {
+            fill: #000;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        /* Default: Robotik/Automation → neon blue */
+        .node-default { stroke: var(--neon-blue); stroke-width: 2; }
+        .node-hamburg  { stroke: var(--amber);   stroke-width: 2; }
+        .node-karlsruhe { stroke: #a855f7;       stroke-width: 2; }
+        .node-dresden   { stroke: #f97316;       stroke-width: 2; }
+
+        .node-default:hover, .node-default.node-active  {
+            fill: var(--neon-blue);
+            filter: drop-shadow(0 0 12px var(--neon-blue));
+        }
+        .node-hamburg:hover, .node-hamburg.node-active {
+            fill: var(--amber);
+            filter: drop-shadow(0 0 12px var(--amber));
+        }
+        .node-karlsruhe:hover, .node-karlsruhe.node-active {
+            fill: #a855f7;
+            filter: drop-shadow(0 0 12px #a855f7);
+        }
+        .node-dresden:hover, .node-dresden.node-active {
+            fill: #f97316;
+            filter: drop-shadow(0 0 12px #f97316);
+        }
+
+        /* Pulse ring */
+        .pulse-ring {
+            fill: none;
+            stroke-width: 1;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .pulse-ring.ring-blue   { stroke: var(--neon-blue); }
+        .pulse-ring.ring-amber  { stroke: var(--amber); }
+        .pulse-ring.ring-purple { stroke: #a855f7; }
+        .pulse-ring.ring-orange { stroke: #f97316; }
+
+        .node-active + .pulse-ring {
+            animation: pulse-anim 1.5s ease-out infinite;
+        }
+
+        @keyframes pulse-anim {
+            0%   { r: 8px;  opacity: 0.7; }
+            100% { r: 22px; opacity: 0; }
+        }
+
+        /* City labels */
+        .city-label {
+            fill: #333;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8px;
+            letter-spacing: 1px;
+            pointer-events: none;
+            transition: fill 0.2s;
+        }
+
+        /* Connection lines */
+        .conn-line {
+            stroke: rgba(0,243,255,0.06);
+            stroke-width: 0.5;
+            stroke-dasharray: 3 5;
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="header">
+            <h1>STRAT_RADAR_DE_2026</h1>
+            <div class="system-stats">
+                <span>SECTOR: AUTO&amp;ROBOT+KI</span>
+                <span>LINK_ESTABLISHED</span>
+                <span>NODES: 7 AKTIV</span>
+                <span>LATENCY: 4MS</span>
+            </div>
+        </div>
+
+        <!-- LEGEND -->
+        <div class="legend">
+            <div class="legend-title">// NODE CLASSIFICATION</div>
+            <div class="legend-row"><span class="legend-dot"></span>ROBOTIK / AUTOMATION</div>
+            <div class="legend-row"><span class="legend-dot hamburg"></span>LOGISTIK / HAFEN-TECH</div>
+            <div class="legend-row"><span class="legend-dot karlsruhe"></span>KI-FORSCHUNG / SOFTWARE</div>
+            <div class="legend-row"><span class="legend-dot dresden"></span>MIKROELEKTRONIK / HALBLEITER</div>
+        </div>
+
+        <div id="selection-hint">
+            &gt; WAITING FOR NODE SELECTION...<br>
+            &gt; 7 CLUSTER IDENTIFIED.<br>
+            &gt; SELECT NODE FÜR DETAILANALYSE.
+        </div>
+
+        <div id="data-display" class="data-block">
+            <div id="region-title"></div>
+            <div id="region-sector"></div>
+            <div id="company-container"></div>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="system-stats">
+                <span>UPLINK: 100%</span>
+                <span>BUILD: 2026.05</span>
+            </div>
+        </div>
+    </aside>
+
+    <main class="viewport">
+        <svg viewBox="0 0 500 700" xmlns="http://www.w3.org/2000/svg">
+            <!-- Germany silhouette (stylized) -->
+            <polygon class="germany-poly"
+                points="150,50 210,40 260,55 350,80 430,130 480,250 460,350 420,450 420,550 380,620 350,680 280,690 200,670 150,650 100,590 60,510 50,430 70,340 60,250 100,150" />
+
+            <!-- Decorative connection lines between nodes -->
+            <line class="conn-line" x1="375" y1="570" x2="200" y2="540"/>
+            <line class="conn-line" x1="200" y1="540" x2="190" y2="260"/>
+            <line class="conn-line" x1="190" y1="260" x2="400" y2="200"/>
+            <line class="conn-line" x1="375" y1="570" x2="195" y2="475"/>
+            <line class="conn-line" x1="195" y1="475" x2="400" y2="200"/>
+            <line class="conn-line" x1="240" y1="100" x2="400" y2="200"/>
+            <line class="conn-line" x1="240" y1="100" x2="190" y2="260"/>
+            <line class="conn-line" x1="370" y1="330" x2="400" y2="200"/>
+            <line class="conn-line" x1="370" y1="330" x2="375" y2="570"/>
+
+            <!-- MÜNCHEN -->
+            <circle id="node-muc" class="node node-default" cx="375" cy="570" r="6" onclick="getTele(0)"/>
+            <circle class="pulse-ring ring-blue" cx="375" cy="570" r="8"/>
+            <text class="city-label" x="385" y="568">MUC</text>
+
+            <!-- STUTTGART -->
+            <circle id="node-str" class="node node-default" cx="200" cy="540" r="6" onclick="getTele(1)"/>
+            <circle class="pulse-ring ring-blue" cx="200" cy="540" r="8"/>
+            <text class="city-label" x="210" y="538">STR</text>
+
+            <!-- BIELEFELD / CONSTRUCTION -->
+            <circle id="node-bi" class="node node-default" cx="190" cy="260" r="6" onclick="getTele(2)"/>
+            <circle class="pulse-ring ring-blue" cx="190" cy="260" r="8"/>
+            <text class="city-label" x="200" y="258">BI</text>
+
+            <!-- BERLIN -->
+            <circle id="node-ber" class="node node-default" cx="400" cy="200" r="6" onclick="getTele(3)"/>
+            <circle class="pulse-ring ring-blue" cx="400" cy="200" r="8"/>
+            <text class="city-label" x="410" y="198">BER</text>
+
+            <!-- HAMBURG -->
+            <circle id="node-ham" class="node node-hamburg" cx="240" cy="100" r="6" onclick="getTele(4)"/>
+            <circle class="pulse-ring ring-amber" cx="240" cy="100" r="8"/>
+            <text class="city-label" x="250" y="98">HAM</text>
+
+            <!-- KARLSRUHE -->
+            <circle id="node-ka" class="node node-karlsruhe" cx="195" cy="475" r="6" onclick="getTele(5)"/>
+            <circle class="pulse-ring ring-purple" cx="195" cy="475" r="8"/>
+            <text class="city-label" x="205" y="473">KA</text>
+
+            <!-- DRESDEN -->
+            <circle id="node-dd" class="node node-dresden" cx="370" cy="330" r="6" onclick="getTele(6)"/>
+            <circle class="pulse-ring ring-orange" cx="370" cy="330" r="8"/>
+            <text class="city-label" x="380" y="328">DD</text>
+        </svg>
+    </main>
+
+    <script>
+        const nodes = [
+            {
+                id: "MÜNCHEN_CLUSTER",
+                sector: "// SEKTOR: INDUSTRIEROBOTIK + KOGNITIVE SYSTEME",
+                clusterClass: "",
+                units: [
+                    {
+                        name: "Agile Robots",
+                        focus: "Kognitive Sensorik",
+                        tech: "C++, Python, PyTorch",
+                        badge: "high",
+                        pot: "Vollautonome Produktion ohne manuelle Programmierung — KI-first Ansatz für flexible Fertigungszellen."
+                    },
+                    {
+                        name: "Franka Robotics",
+                        focus: "Taktile Cobots",
+                        tech: "Real-time Control, ROS2",
+                        badge: "med",
+                        pot: "Industriestandard für Labore und feinteilige Montage. Stärke: Force-Feedback-Präzision."
+                    },
+                    {
+                        name: "RobCo",
+                        focus: "Modulare Kits",
+                        tech: "Modular Software, Low-Code",
+                        badge: "high",
+                        pot: "Skalierbarkeit für KMU durch Plug-&-Play-Stecksystem. Disruption des Systemintegrator-Markts."
+                    }
+                ]
+            },
+            {
+                id: "STUTTGART_CLUSTER",
+                sector: "// SEKTOR: AUTOMOTIVE AUTOMATION + BIONISCHE ROBOTIK",
+                clusterClass: "",
+                units: [
+                    {
+                        name: "NEURA Robotics",
+                        focus: "Multisensorik-Bots",
+                        tech: "Neural Networks, Fusion AI",
+                        badge: "max",
+                        pot: "Erster kommerzieller Roboter mit vollständiger Sensorik: Sehen, Hören, Tasten. Humanoid-Pionier."
+                    },
+                    {
+                        name: "Bosch Rexroth",
+                        focus: "Linear-Automation",
+                        tech: "PLC, Edge Computing, ctrlX",
+                        badge: "stab",
+                        pot: "Rückgrat der weltweiten Automobilindustrie. ctrlX-Plattform öffnet Ökosystem für Drittanbieter."
+                    },
+                    {
+                        name: "Festo",
+                        focus: "Bionische Robotik",
+                        tech: "Pneumatik, Digital Twins",
+                        badge: "med",
+                        pot: "Forschungsführer für adaptive Greifsysteme — Natur als Ingenieurvorlage."
+                    }
+                ]
+            },
+            {
+                id: "BIELEFELD_CONSTRUCTION",
+                sector: "// SEKTOR: SMART CONSTRUCTION + DIGITAL TWIN",
+                clusterClass: "",
+                units: [
+                    {
+                        name: "Goldbeck",
+                        focus: "Industriebau",
+                        tech: "BIM, Digital Twin, Vorfertigung",
+                        badge: "max",
+                        pot: "Marktdominanz durch 100% Vorfertigung im Werk. Automatisierung der Baustelle als nächster Schritt."
+                    },
+                    {
+                        name: "Schüco",
+                        focus: "Smarte Fassaden",
+                        tech: "IoT Integration, BACnet",
+                        badge: "stab",
+                        pot: "Weltweiter Standard für intelligente Gebäudehüllen. Energieautarkie als Wachstumsmarkt."
+                    }
+                ]
+            },
+            {
+                id: "BERLIN_SOFTWARE",
+                sector: "// SEKTOR: KI-SOFTWARE + EDGE-CLOUD ROBOTIK",
+                clusterClass: "",
+                units: [
+                    {
+                        name: "Micropsi Industries",
+                        focus: "AI Vision",
+                        tech: "Neural Training, Computer Vision",
+                        badge: "max",
+                        pot: "Software macht 'blinde' Roboter sehend — ohne klassische Programmierung. Retrofit-fähig."
+                    },
+                    {
+                        name: "Gestalt Robotics",
+                        focus: "Edge Cloud AI",
+                        tech: "Cloud Native, Kubernetes",
+                        badge: "high",
+                        pot: "Auslagerung der Rechenlast für mobile Roboter — ermöglicht günstige Hardware + mächtige KI."
+                    }
+                ]
+            },
+            {
+                id: "HAMBURG_CLUSTER",
+                sector: "// SEKTOR: LOGISTIK-TECH + AUTONOME SYSTEME + HAFEN",
+                clusterClass: "cluster-hamburg",
+                units: [
+                    {
+                        name: "Jungheinrich",
+                        focus: "Autonome Intralogistik",
+                        tech: "AMR, SLAM, Fleet Mgmt",
+                        badge: "high",
+                        pot: "Europäischer Marktführer für fahrerlose Flurförderzeuge. KI-basiertes Warehouse-Management als Wachstumstreiber."
+                    },
+                    {
+                        name: "Hamburg Port Authority (HPA)",
+                        focus: "Smarter Hafen",
+                        tech: "IoT, Digital Twin, 5G",
+                        badge: "max",
+                        pot: "smartPORT-Initiative: Volldigitale Hafensteuerung. Blaupause für Europas Häfen — immenses Lizenzpotenzial."
+                    },
+                    {
+                        name: "HHLA TEC",
+                        focus: "Container-Automatisierung",
+                        tech: "AGV, KI-Planung, Robotik",
+                        badge: "high",
+                        pot: "Automatisierter Containerterminal Altenwerder (CTA) — einer der effizientesten weltweit. Exportierbares Betriebsmodell."
+                    }
+                ]
+            },
+            {
+                id: "KARLSRUHE_CLUSTER",
+                sector: "// SEKTOR: KI-FORSCHUNG + AUTONOME FAHRZEUGE + CYBERSECURITY",
+                clusterClass: "cluster-karlsruhe",
+                units: [
+                    {
+                        name: "FZI Forschungszentrum Informatik",
+                        focus: "Autonome Systeme",
+                        tech: "ROS, Deep Learning, Simulation",
+                        badge: "max",
+                        pot: "Spin-off-Schmiede für autonome Fahrzeuge und Industrierobotik. Direkter Transferkanal zu Industrie-Partnern."
+                    },
+                    {
+                        name: "Bosch AI Research Karlsruhe",
+                        focus: "Embedded KI",
+                        tech: "TinyML, ADAS, Edge AI",
+                        badge: "high",
+                        pot: "KI-Chips für Fahrzeuge und Industriesensoren — strategische Schlüsselposition im ADAS-Markt."
+                    },
+                    {
+                        name: "1KOMMA5°",
+                        focus: "Energie-Automation",
+                        tech: "Heartbeat OS, Predictive Grid",
+                        badge: "high",
+                        pot: "Intelligente Vernetzung von PV, Wärmepumpe und E-Auto. Softwaregetriebene Energiewende im Massenmarkt."
+                    }
+                ]
+            },
+            {
+                id: "DRESDEN_CLUSTER",
+                sector: "// SEKTOR: HALBLEITER + MIKROELEKTRONIK + WAFER-TECH",
+                clusterClass: "cluster-dresden",
+                units: [
+                    {
+                        name: "Infineon Technologies (Werk DD)",
+                        focus: "Leistungshalbleiter",
+                        tech: "SiC, GaN, Power Electronics",
+                        badge: "max",
+                        pot: "Größtes SiC-Werk Europas — kritisch für E-Mobilität und Industrieumrichter. Strategische Souveränität."
+                    },
+                    {
+                        name: "TSMC Dresden (ESMC)",
+                        focus: "Chip-Fertigung",
+                        tech: "22/28nm Node, CMOS",
+                        badge: "max",
+                        pot: "Europas einziges TSMC-Werk — Herzstück des EU Chips Act. Automotive-Grade Produktion ab 2027."
+                    },
+                    {
+                        name: "Silicon Saxony e.V.",
+                        focus: "Cluster-Organisation",
+                        tech: "Ecosystem, FuE-Netzwerk",
+                        badge: "stab",
+                        pot: "Stärkster Halbleiter-Cluster Europas mit 2.000+ Unternehmen. Koordiniert Forschung, Talent und Politik."
+                    }
+                ]
+            }
+        ];
+
+        const badgeMap = {
+            max:  { cls: 'badge-max',  label: 'POTENTIAL: MAX' },
+            high: { cls: 'badge-high', label: 'POTENTIAL: HIGH' },
+            med:  { cls: 'badge-med',  label: 'POTENTIAL: MED' },
+            stab: { cls: 'badge-stab', label: 'STABLE' }
+        };
+
+        const nodeIds = ['node-muc','node-str','node-bi','node-ber','node-ham','node-ka','node-dd'];
+        let activeIdx = -1;
+
+        function getTele(idx) {
+            // deactivate previous
+            if (activeIdx >= 0) {
+                document.getElementById(nodeIds[activeIdx]).classList.remove('node-active');
+            }
+
+            activeIdx = idx;
+            document.getElementById(nodeIds[idx]).classList.add('node-active');
+            document.getElementById('selection-hint').style.display = 'none';
+
+            const display = document.getElementById('data-display');
+            display.style.display = 'none';
+            void display.offsetWidth; // force reflow for animation
+            display.style.display = 'block';
+
+            const node = nodes[idx];
+            document.getElementById('region-title').innerText = node.id;
+            document.getElementById('region-sector').innerText = node.sector;
+
+            const container = document.getElementById('company-container');
+            container.innerHTML = '';
+
+            node.units.forEach(u => {
+                const b = badgeMap[u.badge] || badgeMap.stab;
+                const div = document.createElement('div');
+                div.className = 'company-entry ' + (node.clusterClass || '');
+                div.innerHTML = `
+                    <div class="company-name">${u.name}</div>
+                    <div class="tag-row">
+                        <span class="tag">${u.focus}</span>
+                        <span class="tag">${u.tech}</span>
+                    </div>
+                    <div class="pot-badge ${b.cls}">${b.label}</div>
+                    <div class="pot-text">${u.pot}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>
