@@ -32,27 +32,44 @@ canvas{display:block;width:100vw;height:100vh;}
 
 #nav{position:fixed;right:24px;top:50%;transform:translateY(-50%);z-index:20;
   display:flex;flex-direction:column;gap:0;}
-.ni{display:flex;align-items:center;gap:14px;padding:13px 0;cursor:pointer;
-  border:none;background:none;transition:opacity .18s;opacity:.36;}
-.ni:hover{opacity:.78;}
+.ni{display:flex;align-items:center;gap:12px;padding:10px 0;cursor:pointer;
+  border:none;background:none;transition:opacity .18s;opacity:.32;}
+.ni:hover{opacity:.72;}
 .ni.on{opacity:1;}
-.nb{width:16px;height:2px;background:rgba(255,250,245,.18);flex-shrink:0;transition:all .22s;}
-.ni.on .nb{width:26px;background:rgba(220,36,31,.95);}
+.nb{width:14px;height:1px;background:rgba(255,250,245,.18);flex-shrink:0;transition:all .22s;}
+.ni.on .nb{width:22px;background:rgba(220,36,31,.95);}
 .ni:hover .nb{background:rgba(255,250,245,.5);}
-.nl{font-size:13px;letter-spacing:.18em;text-transform:uppercase;
-  color:rgba(255,250,245,.68);white-space:nowrap;transition:color .18s;font-weight:500;}
+.nl{font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(255,250,245,.62);white-space:nowrap;transition:color .18s;}
 .ni.on .nl{color:rgba(220,36,31,.98);}
 
+#mk{position:fixed;inset:0;z-index:15;pointer-events:none;}
+.m{position:absolute;transform:translate(-50%,-50%);pointer-events:all;cursor:pointer;
+  display:flex;align-items:center;gap:8px;padding:8px;}
+.md{width:6px;height:6px;border-radius:50%;border:1px solid rgba(255,250,245,.4);
+  flex-shrink:0;transition:all .2s;background:transparent;}
+.m:hover .md{background:rgba(220,36,31,.95);border-color:rgba(220,36,31,1);
+  box-shadow:0 0 10px rgba(220,36,31,.4);}
+.ml{font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(255,250,245,.46);white-space:nowrap;transition:color .2s;
+  text-shadow:0 1px 10px rgba(0,0,0,.95);}
+.m:hover .ml{color:rgba(220,36,31,.98);}
+.mr{position:absolute;top:50%;left:8px;width:22px;height:22px;border-radius:50%;
+  border:1px solid rgba(220,36,31,.3);animation:pu 3.2s ease-out infinite;
+  pointer-events:none;transform:translate(-50%,-50%);}
+@keyframes pu{
+  0%{opacity:.5;transform:translate(-50%,-50%) scale(.5);}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(2.4);}
+}
 
-
-/* ── REF PANEL — left side ── */
-#ref{position:fixed;left:0;top:0;bottom:0;z-index:30;
-  pointer-events:none;opacity:0;transition:opacity .26s,transform .26s;transform:translateX(-14px);}
+/* ── REF PANEL ── */
+#ref{position:fixed;right:0;top:0;bottom:0;z-index:30;
+  pointer-events:none;opacity:0;transition:opacity .26s,transform .26s;transform:translateX(14px);}
 #ref.show{opacity:1;pointer-events:all;transform:translateX(0);}
 #ref-card{
   width:clamp(260px,80vw,290px);
   height:100%;background:rgba(10,10,14,.94);
-  border-right:1px solid rgba(255,250,245,.06);backdrop-filter:blur(16px);
+  border-left:1px solid rgba(255,250,245,.06);backdrop-filter:blur(16px);
   display:flex;flex-direction:column;overflow:hidden;position:relative;}
 #ref-scroll{flex:1;overflow-y:auto;
   padding:clamp(40px,8vw,56px) clamp(16px,6vw,26px) 16px;
@@ -114,7 +131,7 @@ canvas{display:block;width:100vw;height:100vh;}
 <body>
 <canvas id="c"></canvas>
 <div id="vig"></div>
-
+<div id="mk"></div>
 
 <div id="logo">
   <!-- TfL Roundel SVG -->
@@ -498,8 +515,8 @@ addB(.018,1.92,.042,mat({color:0x02020a,metalness:.88}),0,FY+.96,-CL+2.03);
 var mWF=mat({color:0x1c2030,metalness:.65,roughness:.48});
 var mWG=mat({color:0x010306,transparent:true,opacity:.88,roughness:.02,metalness:.35,depthWrite:false});
 var mSill=mat({color:0x9090a0,metalness:.72,roughness:.32});
-// Left wall windows — -8.0 removed (dashboard screen sits there)
-[-1.0,-3.2,-5.6,-10.4,-12.8,-15.2].forEach(function(wz){
+// Left wall windows
+[-1.0,-3.2,-5.6,-8.0,-10.4,-12.8,-15.2].forEach(function(wz){
   addB(.044,.72,1.18,mWF,-CW,FY+1.18,wz);
   addB(.052,.68,1.12,mat({color:0x0c1018,metalness:.42,roughness:.68}),-CW+.028,FY+1.18,wz);
   addB(.048,.022,1.14,mSill,-CW,FY+.82,wz);
@@ -573,34 +590,17 @@ var railR=new THREE.Mesh(railGeo,mRail);
 railR.rotation.x=Math.PI/2;railR.position.set(CW-.14,CYL-.08,-(CL/2-2));scene.add(railR);
 
 var POLE_X=0.22;
-// Pole runs full height with flanges top and bottom
-var POLE_H=CH*.88;
-var POLE_BOT=FY+CH*.06;  // bottom flange y
-var POLE_TOP=FY+CH*.94;  // top flange y
-var mFlange=mat({color:0xc8c4bc,metalness:.90,roughness:.18});
 for(var pz2=1.0;pz2>-CL+1;pz2-=2.4){
   [-POLE_X,POLE_X].forEach(function(px){
-    // main vertical pole — full height
-    var p=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,POLE_H,12),mPole);
-    p.position.set(px,FY+CH*.50,pz2);scene.add(p);
-    // ── ceiling flange (rosette) — wider disc at top ──
-    var fTop=new THREE.Mesh(new THREE.CylinderGeometry(.038,.038,.022,16),mFlange);
-    fTop.position.set(px,POLE_TOP,pz2);scene.add(fTop);
-    // small collar ring just below ceiling flange
-    var cTop=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.028,12),mFlange);
-    cTop.position.set(px,POLE_TOP-.026,pz2);scene.add(cTop);
-    // ── floor flange (rosette) — wider disc at bottom ──
-    var fBot=new THREE.Mesh(new THREE.CylinderGeometry(.040,.040,.024,16),mFlange);
-    fBot.position.set(px,POLE_BOT,pz2);scene.add(fBot);
-    // small collar ring just above floor flange
-    var cBot=new THREE.Mesh(new THREE.CylinderGeometry(.024,.024,.028,12),mFlange);
-    cBot.position.set(px,POLE_BOT+.028,pz2);scene.add(cBot);
-    // yellow rubber grip ring mid-height
-    var yb=new THREE.Mesh(new THREE.CylinderGeometry(.020,.020,.060,12),mGrip);
-    yb.position.set(px,FY+CH*.52,pz2);scene.add(yb);
-    // second grip ring lower third
-    var yb2=new THREE.Mesh(new THREE.CylinderGeometry(.020,.020,.050,12),mGrip);
-    yb2.position.set(px,FY+CH*.28,pz2);scene.add(yb2);
+    // vertical pole
+    var p=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,CH*.80,10),mPole);
+    p.position.set(px,FY+CH*.60,pz2);scene.add(p);
+    // yellow rubber grip ring mid
+    var yb=new THREE.Mesh(new THREE.CylinderGeometry(.019,.019,.058,10),mGrip);
+    yb.position.set(px,FY+CH*.50,pz2);scene.add(yb);
+    // second grip near bottom
+    var yb2=new THREE.Mesh(new THREE.CylinderGeometry(.019,.019,.048,10),mGrip);
+    yb2.position.set(px,FY+CH*.30,pz2);scene.add(yb2);
   });
 }
 
@@ -668,7 +668,7 @@ var VIEWS={
   standing:{pos:[0,      FY+.92,  1.4],    look:[0,      FY+.88,-14]},
   seat:    {pos:[CW-.8,  FY+1.50,-3.2],    look:[CW+.1,  FY+1.50,-3.2]},
   screen:  {pos:[-CW+.85,FY+1.50,-8.0],    look:[-CW-.1, FY+1.50,-8.0]},
-  window:  {pos:[-CW+.16,FY+1.50, -3.8],    look:[CW-.2,  FY+1.46, -14]},
+  window:  {pos:[-CW+.16,FY+.90, -3.8],    look:[CW-.2,  FY+.86, -14]},
   door:    {pos:[0,      FY+.92, -CL+4.5], look:[0,      FY+.90,-CL-.5]},
 };
 var curV='standing';
@@ -682,16 +682,49 @@ window.goV=function(name){
   curV=name;
   tP=VIEWS[name].pos.slice();tL=VIEWS[name].look.slice();
   document.querySelectorAll('.ni').forEach(function(d){d.classList.toggle('on',d.dataset.v===name);});
+  mEls.forEach(function(m){m.sx=-1;m.sy=-1;});
   needsRender=true;
   if(window._refTimer)clearTimeout(window._refTimer);
   window._refTimer=setTimeout(function(){openRef(name);},700);
 };
 
-// ── MARKERS removed — navigation via right-side panel only ─────
-var mEls=[];
+// ── MARKERS ────────────────────────────────────────────────────
+var MKS=[
+  {v:'standing',w:new THREE.Vector3(0,      FY+1.06, .8),   l:'Übersicht'},
+  {v:'seat',    w:new THREE.Vector3(CW-.2,   FY+1.50,-3.2),  l:'E-Commerce'},
+  {v:'screen',  w:new THREE.Vector3(-CW+.2,  FY+1.50,-8.0),  l:'Dashboard'},
+  {v:'window',  w:new THREE.Vector3(-CW+.2,  FY+1.18,-5.6),  l:'Mobile App'},
+  {v:'door',    w:new THREE.Vector3(0,       FY+1.06,-CL+5), l:'Branding'},
+];
+var mkDiv=document.getElementById('mk'),mEls=[];
+MKS.forEach(function(m){
+  var el=document.createElement('div');el.className='m';
+  el.innerHTML='<div class="mr"></div><div class="md"></div><div class="ml">'+m.l+'</div>';
+  el.addEventListener('click',function(){goV(m.v);});
+  mkDiv.appendChild(el);
+  mEls.push({el:el,w:m.w,v:m.v,sx:-1,sy:-1});
+});
+
+var _v3=new THREE.Vector3();
 var cP=new THREE.Vector3(tP[0],tP[1],tP[2]);
 var cLv=new THREE.Vector3(tL[0],tL[1],tL[2]);
-function updMK(){}
+var MK_THR=0.6,mkFrame=0;
+
+function updMK(){
+  mkFrame++;if(mkFrame%3!==0)return;
+  mEls.forEach(function(m){
+    if(m.v===curV){if(m.el.style.display!=='none')m.el.style.display='none';return;}
+    _v3.copy(m.w).project(camera);
+    var sx=(_v3.x*.5+.5)*W,sy=(-.5*_v3.y+.5)*H,mg=55;
+    if(_v3.z>1||sx<mg||sx>W-mg||sy<mg||sy>H-mg){
+      if(m.el.style.display!=='none')m.el.style.display='none';m.sx=-1;m.sy=-1;return;
+    }
+    if(m.el.style.display==='none')m.el.style.display='flex';
+    if(Math.abs(sx-m.sx)>MK_THR||Math.abs(sy-m.sy)>MK_THR){
+      m.el.style.left=sx+'px';m.el.style.top=sy+'px';m.sx=sx;m.sy=sy;
+    }
+  });
+}
 
 // ── STATIONS ───────────────────────────────────────────────────
 var stnEl=document.getElementById('stn');
