@@ -6,83 +6,84 @@
 <title>UX Agency Underground — UX Agentur</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:#0d0e12;overflow:hidden;font-family:'Courier New',monospace;}
+body{background:#0a0b0f;overflow:hidden;font-family:'Courier New',monospace;}
 canvas{display:block;width:100vw;height:100vh;}
 
 #vig{position:fixed;inset:0;pointer-events:none;z-index:4;
-  background:radial-gradient(ellipse at 50% 48%,transparent 28%,rgba(6,6,10,.2) 56%,rgba(4,4,8,.82) 100%);}
+  background:radial-gradient(ellipse at 50% 46%,transparent 22%,rgba(4,5,8,.28) 52%,rgba(2,3,6,.88) 100%);}
 
 #logo{position:fixed;top:22px;left:24px;z-index:20;pointer-events:none;display:flex;align-items:center;gap:12px;}
 #roundel{width:36px;height:36px;flex-shrink:0;}
-#logo .l1{font-size:13px;letter-spacing:.28em;color:rgba(255,250,245,.82);text-transform:uppercase;}
-#logo .l2{font-size:7px;letter-spacing:.22em;color:rgba(220,36,31,.55);text-transform:uppercase;margin-top:4px;}
+#logo .l1{font-size:13px;letter-spacing:.28em;color:rgba(255,250,240,.78);text-transform:uppercase;}
+#logo .l2{font-size:7px;letter-spacing:.22em;color:rgba(220,36,31,.58);text-transform:uppercase;margin-top:4px;}
 
 #hud{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
   z-index:10;display:flex;gap:24px;align-items:center;pointer-events:none;}
-#hud a{color:rgba(255,250,245,.22);text-decoration:none;font-size:9px;letter-spacing:.28em;
-  text-transform:uppercase;pointer-events:all;transition:color .22s;cursor:pointer;padding:6px 0;}
-#hud a:hover{color:rgba(220,36,31,.75);}
-#hud span{color:rgba(255,250,245,.12);font-size:8px;}
+#hud a{color:rgba(255,250,240,.28);text-decoration:none;font-size:9px;letter-spacing:.28em;
+  text-transform:uppercase;pointer-events:all;transition:color 0s;cursor:pointer;padding:6px 0;}
+#hud a:hover{color:rgba(220,36,31,.90);}
+#hud span{color:rgba(255,250,240,.10);font-size:8px;}
 
 #stn{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-  z-index:10;color:rgba(255,250,245,0);font-size:12px;letter-spacing:.38em;
+  z-index:10;color:rgba(255,250,240,0);font-size:12px;letter-spacing:.38em;
   text-transform:uppercase;pointer-events:none;transition:color 1.8s;}
-#stn.show{color:rgba(255,250,245,.22);}
+#stn.show{color:rgba(255,250,240,.24);}
 
 #nav{position:fixed;right:24px;top:50%;transform:translateY(-50%);z-index:20;
   display:flex;flex-direction:column;gap:0;}
-.ni{display:flex;align-items:center;gap:14px;padding:13px 0;cursor:pointer;
-  border:none;background:none;transition:opacity .18s;opacity:.36;}
-.ni:hover{opacity:.78;}
+.ni{display:flex;align-items:center;gap:14px;padding:12px 0;cursor:pointer;
+  border:none;background:none;transition:opacity 0s;opacity:.42;}
+.ni:hover{opacity:1;}
 .ni.on{opacity:1;}
-.nb{width:16px;height:2px;background:rgba(255,250,245,.18);flex-shrink:0;transition:all .22s;}
-.ni.on .nb{width:26px;background:rgba(220,36,31,.95);}
-.ni:hover .nb{background:rgba(255,250,245,.5);}
+.nb{width:16px;height:2px;background:rgba(255,250,240,.22);flex-shrink:0;transition:width 0s,background 0s;}
+.ni.on .nb{width:28px;background:#dc241f;}
+.ni:hover:not(.on) .nb{width:22px;background:rgba(255,250,240,.65);}
 .nl{font-size:13px;letter-spacing:.18em;text-transform:uppercase;
-  color:rgba(255,250,245,.68);white-space:nowrap;transition:color .18s;font-weight:500;}
-.ni.on .nl{color:rgba(220,36,31,.98);}
+  color:rgba(255,250,240,.72);white-space:nowrap;transition:color 0s;font-weight:500;}
+.ni.on .nl{color:#dc241f;}
+.ni:hover:not(.on) .nl{color:rgba(255,250,240,.95);}
 
-/* ── REF PANEL — left side ── */
+/* ── REF PANEL ── */
 #ref{position:fixed;left:0;top:0;bottom:0;z-index:30;
-  pointer-events:none;opacity:0;transition:opacity .26s,transform .26s;transform:translateX(-14px);}
+  pointer-events:none;opacity:0;transition:opacity .24s,transform .24s;transform:translateX(-12px);}
 #ref.show{opacity:1;pointer-events:all;transform:translateX(0);}
 #ref-card{
-  width:clamp(260px,80vw,290px);
-  height:100%;background:rgba(10,10,14,.94);
-  border-right:1px solid rgba(255,250,245,.06);backdrop-filter:blur(16px);
+  width:clamp(300px,88vw,380px);height:100%;
+  background:rgba(8,9,14,.96);
+  border-right:1px solid rgba(255,250,240,.06);backdrop-filter:blur(18px);
   display:flex;flex-direction:column;overflow:hidden;position:relative;}
 #ref-scroll{flex:1;overflow-y:auto;
-  padding:clamp(40px,8vw,56px) clamp(16px,6vw,26px) 16px;
-  display:flex;flex-direction:column;gap:12px;
-  scrollbar-width:thin;scrollbar-color:rgba(220,36,31,.12) transparent;}
-#ref-tag{font-size:6px;letter-spacing:.48em;color:rgba(220,36,31,.55);text-transform:uppercase;}
-#ref-title{font-size:clamp(13px,4vw,17px);color:rgba(255,250,245,.9);letter-spacing:.02em;line-height:1.2;font-weight:normal;}
-#ref-sub{font-size:8px;letter-spacing:.18em;color:rgba(255,250,245,.24);text-transform:uppercase;margin-top:-4px;}
-#ref-divider{height:1px;background:rgba(255,250,245,.05);margin:2px 0;}
-#ref-desc{font-size:clamp(10px,2.8vw,11px);line-height:1.72;color:rgba(255,250,245,.48);font-family:sans-serif;letter-spacing:.01em;}
-#ref-tags{display:flex;flex-wrap:wrap;gap:5px;}
-.rt{font-size:7px;letter-spacing:.14em;text-transform:uppercase;padding:4px 9px;
-  border:1px solid rgba(255,250,245,.08);border-radius:2px;color:rgba(255,250,245,.28);}
-#ref-footer{padding:clamp(12px,4vw,20px) clamp(16px,6vw,26px);border-top:1px solid rgba(255,250,245,.05);display:flex;flex-direction:column;gap:9px;}
-#ref-link{display:block;padding:clamp(9px,3vw,13px) 20px;background:rgba(220,36,31,.1);
-  border:1px solid rgba(220,36,31,.38);border-radius:4px;color:rgba(220,36,31,.92);
+  padding:clamp(44px,8vw,60px) clamp(20px,6vw,32px) 16px;
+  display:flex;flex-direction:column;gap:14px;
+  scrollbar-width:thin;scrollbar-color:rgba(220,36,31,.15) transparent;}
+#ref-tag{font-size:6px;letter-spacing:.52em;color:#dc241f;text-transform:uppercase;}
+#ref-title{font-size:clamp(14px,4vw,19px);color:rgba(255,250,240,.92);letter-spacing:.02em;line-height:1.2;font-weight:normal;}
+#ref-sub{font-size:8px;letter-spacing:.18em;color:rgba(255,250,240,.32);text-transform:uppercase;margin-top:-4px;}
+#ref-divider{height:1px;background:rgba(255,250,240,.06);margin:2px 0;}
+#ref-desc{font-size:clamp(11px,2.8vw,12px);line-height:1.78;color:rgba(255,250,240,.52);font-family:sans-serif;letter-spacing:.01em;}
+#ref-tags{display:flex;flex-wrap:wrap;gap:6px;}
+.rt{font-size:7px;letter-spacing:.14em;text-transform:uppercase;padding:5px 10px;
+  border:1px solid rgba(0,54,136,.48);border-radius:3px;
+  color:rgba(140,168,220,.68);background:rgba(0,54,136,.10);}
+#ref-footer{padding:clamp(14px,4vw,22px) clamp(20px,6vw,32px);border-top:1px solid rgba(255,250,240,.05);display:flex;flex-direction:column;gap:10px;}
+#ref-link{display:block;padding:13px 20px;background:rgba(220,36,31,.14);
+  border:1px solid rgba(220,36,31,.55);border-radius:4px;color:#e84844;
   font-size:9px;letter-spacing:.22em;text-transform:uppercase;text-decoration:none;
-  transition:all .2s;text-align:center;font-family:'Courier New',monospace;}
-#ref-link:hover{background:rgba(220,36,31,.2);border-color:rgba(220,36,31,.7);}
-#ref-close{display:block;padding:clamp(8px,2.5vw,11px) 20px;border:1px solid rgba(255,250,245,.07);
-  border-radius:4px;color:rgba(255,250,245,.26);font-size:9px;letter-spacing:.22em;
-  text-transform:uppercase;cursor:pointer;transition:all .2s;background:none;
+  transition:background 0s,border-color 0s;text-align:center;font-family:'Courier New',monospace;}
+#ref-link:hover{background:rgba(220,36,31,.28);border-color:#dc241f;}
+#ref-close{display:block;padding:11px 20px;border:1px solid rgba(255,250,240,.12);
+  border-radius:4px;color:rgba(255,250,240,.48);font-size:9px;letter-spacing:.22em;
+  text-transform:uppercase;cursor:pointer;transition:all 0s;background:none;
   font-family:'Courier New',monospace;text-align:center;}
-#ref-close:hover{border-color:rgba(255,250,245,.22);color:rgba(255,250,245,.58);}
-#ref-x{position:absolute;top:12px;right:12px;z-index:2;width:26px;height:26px;
+#ref-close:hover{border-color:rgba(255,250,240,.36);color:rgba(255,250,240,.88);}
+#ref-x{position:absolute;top:14px;right:14px;z-index:2;width:28px;height:28px;
   display:flex;align-items:center;justify-content:center;cursor:pointer;
-  color:rgba(255,250,245,.26);font-size:13px;border-radius:50%;
-  border:1px solid rgba(255,250,245,.07);transition:all .2s;background:rgba(10,10,14,.6);}
-#ref-x:hover{color:rgba(255,250,245,.68);border-color:rgba(255,250,245,.22);}
+  color:rgba(255,250,240,.35);font-size:13px;border-radius:50%;
+  border:1px solid rgba(255,250,240,.10);transition:all 0s;background:rgba(8,9,14,.7);}
+#ref-x:hover{color:#fff;border-color:rgba(255,250,240,.38);background:rgba(220,36,31,.20);}
 
-/* ── Mobile: kleineres Modal, größere Schrift ── */
 @media(max-width:600px){
-  #ref-card{width:76vw;}
+  #ref-card{width:78vw;}
   #ref-title{font-size:clamp(15px,5vw,20px);}
   #ref-desc{font-size:clamp(12px,3.8vw,14px);}
   #ref-sub{font-size:10px;}
@@ -91,31 +92,28 @@ canvas{display:block;width:100vw;height:100vh;}
   #ref-scroll{padding:36px 14px 12px;}
 }
 
-/* ── IMPRESSUM MODAL ── */
+/* ── IMPRESSUM ── */
 #imp{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
   pointer-events:none;opacity:0;transition:opacity .22s;}
 #imp.show{opacity:1;pointer-events:all;}
-#imp-bg{position:absolute;inset:0;background:rgba(0,0,0,.68);backdrop-filter:blur(6px);}
-#imp-box{position:relative;z-index:1;background:rgba(10,10,14,.97);
-  border:1px solid rgba(255,250,245,.07);border-radius:8px;
-  width:min(460px,88vw);max-height:min(74vh,520px);overflow-y:auto;
-  padding:clamp(18px,5vw,32px);
-  scrollbar-width:thin;scrollbar-color:rgba(220,36,31,.1) transparent;}
-#imp-box h2{font-size:9px;letter-spacing:.42em;color:rgba(220,36,31,.65);text-transform:uppercase;margin-bottom:16px;}
-#imp-box h3{font-size:8.5px;letter-spacing:.28em;color:rgba(255,250,245,.38);text-transform:uppercase;margin:14px 0 6px;}
-#imp-box p{font-size:clamp(10px,2.8vw,10.5px);line-height:1.82;color:rgba(255,250,245,.36);font-family:sans-serif;}
-#imp-box a{color:rgba(220,36,31,.55);text-decoration:none;}
-#imp-close{margin-top:20px;display:inline-block;padding:9px 18px;
-  border:1px solid rgba(255,250,245,.09);border-radius:4px;
-  color:rgba(255,250,245,.33);font-size:9px;letter-spacing:.22em;
-  text-transform:uppercase;cursor:pointer;transition:all .2s;background:none;
+#imp-bg{position:absolute;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);}
+#imp-box{position:relative;z-index:1;background:rgba(8,9,14,.98);
+  border:1px solid rgba(255,250,240,.07);border-radius:8px;
+  width:min(480px,88vw);max-height:min(74vh,520px);overflow-y:auto;
+  padding:clamp(20px,5vw,34px);
+  scrollbar-width:thin;scrollbar-color:rgba(220,36,31,.10) transparent;}
+#imp-box h2{font-size:9px;letter-spacing:.42em;color:#dc241f;text-transform:uppercase;margin-bottom:18px;}
+#imp-box h3{font-size:8.5px;letter-spacing:.28em;color:rgba(255,250,240,.38);text-transform:uppercase;margin:16px 0 6px;}
+#imp-box p{font-size:clamp(10px,2.8vw,11px);line-height:1.86;color:rgba(255,250,240,.36);font-family:sans-serif;}
+#imp-box a{color:rgba(220,36,31,.65);text-decoration:none;}
+#imp-close{margin-top:22px;display:inline-block;padding:10px 20px;
+  border:1px solid rgba(255,250,240,.10);border-radius:4px;
+  color:rgba(255,250,240,.40);font-size:9px;letter-spacing:.22em;
+  text-transform:uppercase;cursor:pointer;transition:all 0s;background:none;
   font-family:'Courier New',monospace;}
-#imp-close:hover{border-color:rgba(255,250,245,.26);color:rgba(255,250,245,.62);}
+#imp-close:hover{border-color:rgba(255,250,240,.32);color:rgba(255,250,240,.78);}
 
-@media(max-width:500px){
-  #nav{right:12px;}
-  #hud{gap:14px;}
-}
+@media(max-width:500px){#nav{right:12px;}#hud{gap:14px;}}
 </style>
 </head>
 <body>
@@ -123,7 +121,6 @@ canvas{display:block;width:100vw;height:100vh;}
 <div id="vig"></div>
 
 <div id="logo">
-  <!-- TfL Roundel SVG — ohne "STUDIO" Text -->
   <svg id="roundel" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
     <circle cx="18" cy="18" r="16" fill="#dc241f"/>
     <rect x="2" y="14" width="32" height="8" fill="#003688"/>
@@ -136,7 +133,6 @@ canvas{display:block;width:100vw;height:100vh;}
   <span>·</span>
   <a onclick="showImp('datenschutz')">Datenschutz</a>
 </div>
-
 <div id="stn"></div>
 
 <div id="nav">
@@ -207,7 +203,6 @@ function openRef(v){
   document.getElementById('ref').classList.add('show');
 }
 function closeRef(){document.getElementById('ref').classList.remove('show');}
-
 var IMP={
   impressum:{heading:'Impressum',body:'<h3>Angaben gemäß § 5 TMG</h3><p>UX Agency Underground<br>Musterstraße 42<br>10115 Berlin</p><h3>Kontakt</h3><p>E-Mail: <a href="mailto:hallo@studio-underground.de">hallo@studio-underground.de</a><br>Tel: +49 30 123 456 78</p><h3>Verantwortlich</h3><p>Max Mustermann, Geschäftsführer</p><h3>Haftung</h3><p>Inhalte sorgfältig erstellt. Keine Gewähr für Richtigkeit.</p>'},
   datenschutz:{heading:'Datenschutz',body:'<h3>Verantwortlicher</h3><p>UX Agency Underground, Musterstraße 42, 10115 Berlin</p><h3>Datenerhebung</h3><p>Diese Website erhebt keine personenbezogenen Daten. Keine Cookies, kein Tracking.</p><h3>Hosting</h3><p>Server in der EU. Verbindungsdaten werden 7 Tage gespeichert.</p><h3>Ihre Rechte</h3><p>Auskunft, Löschung gemäß DSGVO: <a href="mailto:datenschutz@studio-underground.de">datenschutz@studio-underground.de</a></p>'},
@@ -222,24 +217,21 @@ var renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
 renderer.setSize(W,H);
 renderer.toneMapping=THREE.ReinhardToneMapping;
-renderer.toneMappingExposure=1.0;
+renderer.toneMappingExposure=0.88;
 renderer.shadowMap.enabled=false;
 
 var scene=new THREE.Scene();
-scene.background=new THREE.Color(0x0d0e12);
-scene.fog=new THREE.FogExp2(0x0d0e12,.03);
+scene.background=new THREE.Color(0x0a0b0f);
+scene.fog=new THREE.FogExp2(0x0a0b0f,.034);
 
 var camera=new THREE.PerspectiveCamera(62,W/H,.06,62);
 camera.rotation.order='YXZ';
-
 window.addEventListener('resize',function(){
   W=window.innerWidth;H=window.innerHeight;
   renderer.setSize(W,H);camera.aspect=W/H;camera.updateProjectionMatrix();
-  mEls.forEach(function(m){m.sx=-1;m.sy=-1;});
-  needsRender=true;
+  mEls.forEach(function(m){m.sx=-1;m.sy=-1;});needsRender=true;
 });
 
-// ── TEXTURES ──────────────────────────────────────────────────
 function mkTex(w,h,fn,rS,rT){
   var c=document.createElement('canvas');c.width=w;c.height=h;
   fn(c.getContext('2d'),w,h);
@@ -248,104 +240,93 @@ function mkTex(w,h,fn,rS,rT){
   return t;
 }
 
-// ── Wände — LU cream enamel panels ──
+// ── WAND — altes vergilbtes Tube-Enamel, gedämpft ──
+// Referenz: echte LU-Stationen Bakerloo/Central — gebrochenes Crème-Gelb
 var tWall=mkTex(512,512,function(ctx,w,h){
-  ctx.fillStyle='#e8e4dc';ctx.fillRect(0,0,w,h);
-  for(var x=0;x<w;x+=256)for(var y=0;y<h;y+=160){
-    var v=232+(Math.random()*8|0);
-    ctx.fillStyle='rgb('+v+','+(v-2)+','+(v-8)+')';
-    ctx.fillRect(x+1,y+1,254,158);
-    var gh=ctx.createLinearGradient(0,y,0,y+160);
-    gh.addColorStop(0,'rgba(255,255,255,.14)');
-    gh.addColorStop(.3,'rgba(255,255,255,.06)');
-    gh.addColorStop(1,'rgba(0,0,0,.04)');
-    ctx.fillStyle=gh;ctx.fillRect(x+1,y+1,254,158);
-    for(var ni=0;ni<6;ni++){
-      ctx.fillStyle='rgba(255,255,255,.05)';
-      ctx.fillRect(x+Math.random()*250,y+Math.random()*155,8+Math.random()*20,1);
+  // Basis: stumpfes vergilbtes Enamel-Crème
+  ctx.fillStyle='#c8c0ad';ctx.fillRect(0,0,w,h);
+  for(var x=0;x<w;x+=256)for(var y=0;y<h;y+=192){
+    var v=196+(Math.random()*8|0);
+    var r=v,g=v-4,b=v-14;
+    ctx.fillStyle='rgb('+r+','+g+','+b+')';
+    ctx.fillRect(x+1,y+1,254,190);
+    // Curved-Highlight — sehr dezent
+    var gh=ctx.createLinearGradient(0,y,0,y+192);
+    gh.addColorStop(0,'rgba(255,250,235,.09)');
+    gh.addColorStop(.3,'rgba(255,250,235,.04)');
+    gh.addColorStop(1,'rgba(0,0,0,.06)');
+    ctx.fillStyle=gh;ctx.fillRect(x+1,y+1,254,190);
+    // Alterung / leichte Flecken
+    for(var ni=0;ni<8;ni++){
+      ctx.fillStyle='rgba(0,0,0,'+(0.01+Math.random()*.04)+')';
+      ctx.fillRect(x+Math.random()*248,y+Math.random()*186,6+Math.random()*30,1+Math.random()*3);
     }
   }
-  ctx.strokeStyle='rgba(100,90,80,.18)';ctx.lineWidth=1.2;
+  // Fugen — stärker sichtbar, typisch LU
+  ctx.strokeStyle='rgba(80,70,55,.28)';ctx.lineWidth=1.4;
   for(var x2=0;x2<w;x2+=256){ctx.beginPath();ctx.moveTo(x2,0);ctx.lineTo(x2,h);ctx.stroke();}
-  for(var y2=0;y2<h;y2+=160){ctx.beginPath();ctx.moveTo(0,y2);ctx.lineTo(w,y2);ctx.stroke();}
-  ctx.strokeStyle='rgba(0,0,0,.08)';ctx.lineWidth=.5;
-  for(var x3=0;x3<w;x3+=256){
-    ctx.beginPath();ctx.moveTo(x3+2,0);ctx.lineTo(x3+2,h);ctx.stroke();
-  }
-  var gy=ctx.createLinearGradient(0,h*.60,0,h*.665);
-  gy.addColorStop(0,'rgba(0,54,136,.0)');
-  gy.addColorStop(.25,'rgba(0,54,136,.55)');
-  gy.addColorStop(.75,'rgba(0,54,136,.55)');
-  gy.addColorStop(1,'rgba(0,54,136,.0)');
-  ctx.fillStyle=gy;ctx.fillRect(0,h*.59,w,h*.075);
-  var gr=ctx.createLinearGradient(0,h*.585,0,h*.598);
-  gr.addColorStop(0,'rgba(220,36,31,.0)');
-  gr.addColorStop(.4,'rgba(220,36,31,.65)');
-  gr.addColorStop(.6,'rgba(220,36,31,.65)');
-  gr.addColorStop(1,'rgba(220,36,31,.0)');
-  ctx.fillStyle=gr;ctx.fillRect(0,h*.582,w,h*.016);
+  for(var y2=0;y2<h;y2+=192){ctx.beginPath();ctx.moveTo(0,y2);ctx.lineTo(w,y2);ctx.stroke();}
+  // Fugenschatten innen
+  ctx.strokeStyle='rgba(0,0,0,.12)';ctx.lineWidth=.7;
+  for(var x3=0;x3<w;x3+=256){ctx.beginPath();ctx.moveTo(x3+2,0);ctx.lineTo(x3+2,h);ctx.stroke();}
+  // Kein Streifen
 });
 
-// ── Boden — grauer Vinyl/PVC ──
+// ── BODEN — dunkles Anthrazit-Gummi, wie echte Tube ──
 var tFloor=mkTex(512,512,function(ctx,w,h){
-  // Basis — mittleres Grau PVC
-  ctx.fillStyle='#8a8a8a';ctx.fillRect(0,0,w,h);
-  // PVC-Plattenraster (600x600mm-ähnlich)
-  for(var x=0;x<w;x+=128)for(var y=0;y<h;y+=128){
-    var v=134+(Math.random()*10|0);
-    ctx.fillStyle='rgb('+v+','+v+','+v+')';
-    ctx.fillRect(x+1,y+1,126,126);
-    // Oberflächenglanz — leichter Gradient pro Platte
-    var gp=ctx.createLinearGradient(x,y,x+128,y+128);
-    gp.addColorStop(0,'rgba(255,255,255,.07)');
-    gp.addColorStop(1,'rgba(0,0,0,.05)');
-    ctx.fillStyle=gp;ctx.fillRect(x+1,y+1,126,126);
+  // Basis: fast schwarz, leicht warm-grau
+  ctx.fillStyle='#1c1a18';ctx.fillRect(0,0,w,h);
+  // Querrippen — LU-typisches Anti-Slip-Profil
+  for(var y=0;y<h;y+=7){
+    ctx.fillStyle='rgba(255,255,255,'+(0.008+Math.random()*.012)+')';
+    ctx.fillRect(0,y,w,2.5);
+    ctx.fillStyle='rgba(0,0,0,.18)';
+    ctx.fillRect(0,y+2.5,w,2);
   }
-  // Fugen — dunkel
-  ctx.strokeStyle='rgba(50,50,50,.45)';ctx.lineWidth=1.5;
-  for(var xi=0;xi<w;xi+=128){ctx.beginPath();ctx.moveTo(xi,0);ctx.lineTo(xi,h);ctx.stroke();}
-  for(var yi=0;yi<h;yi+=128){ctx.beginPath();ctx.moveTo(0,yi);ctx.lineTo(w,yi);ctx.stroke();}
-  // Verschleiß und Gebrauchsspuren
-  for(var i=0;i<180;i++){
+  // Trittspuren & Schmutz
+  for(var i=0;i<500;i++){
     var fx=Math.random()*w,fy=Math.random()*h;
-    ctx.fillStyle='rgba(0,0,0,'+(0.015+Math.random()*.04)+')';
-    ctx.fillRect(fx,fy,4+Math.random()*20,1+Math.random()*2);
+    ctx.fillStyle='rgba(60,50,40,'+(0.02+Math.random()*.08)+')';
+    ctx.fillRect(fx,fy,2+Math.random()*12,1+Math.random()*2);
   }
-  // leichter Mittelschein (Lichtreflexion)
-  var gc=ctx.createLinearGradient(w*.15,0,w*.85,0);
+  // leichter Mittelglanz
+  var gc=ctx.createLinearGradient(w*.2,0,w*.8,0);
   gc.addColorStop(0,'rgba(255,255,255,0)');
-  gc.addColorStop(.5,'rgba(255,255,255,.06)');
+  gc.addColorStop(.5,'rgba(255,255,255,.025)');
   gc.addColorStop(1,'rgba(255,255,255,0)');
   ctx.fillStyle=gc;ctx.fillRect(0,0,w,h);
-},2,6);
+},1,5);
 
-// ── Decke — LU tunnel ceiling, off-white ──
+// ── DECKE — dunkles schmutziges Off-White ──
 var tCeil=mkTex(256,256,function(ctx,w,h){
-  ctx.fillStyle='#d8d4cc';ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='#b8b2a4';ctx.fillRect(0,0,w,h);
   for(var x=0;x<w;x+=128)for(var y=0;y<h;y+=128){
-    var v=216+(Math.random()*10|0);
-    ctx.fillStyle='rgb('+v+','+(v-2)+','+(v-6)+')';ctx.fillRect(x+1,y+1,126,126);
+    var v=178+(Math.random()*8|0);
+    ctx.fillStyle='rgb('+v+','+(v-3)+','+(v-10)+')';ctx.fillRect(x+1,y+1,126,126);
     var gc2=ctx.createLinearGradient(x,y,x,y+128);
-    gc2.addColorStop(0,'rgba(255,255,255,.08)');
-    gc2.addColorStop(1,'rgba(0,0,0,.06)');
+    gc2.addColorStop(0,'rgba(255,255,255,.06)');
+    gc2.addColorStop(1,'rgba(0,0,0,.08)');
     ctx.fillStyle=gc2;ctx.fillRect(x+1,y+1,126,126);
+    // Alterungsflecken
+    for(var ni=0;ni<4;ni++){
+      ctx.fillStyle='rgba(0,0,0,'+(0.02+Math.random()*.05)+')';
+      ctx.fillRect(x+Math.random()*122,y+Math.random()*122,4+Math.random()*20,1+Math.random()*3);
+    }
   }
-  ctx.strokeStyle='rgba(0,0,0,.08)';ctx.lineWidth=.8;
+  ctx.strokeStyle='rgba(0,0,0,.10)';ctx.lineWidth=.9;
   for(var x2=0;x2<w;x2+=128){ctx.beginPath();ctx.moveTo(x2,0);ctx.lineTo(x2,h);ctx.stroke();}
   for(var y2=0;y2<h;y2+=128){ctx.beginPath();ctx.moveTo(0,y2);ctx.lineTo(w,y2);ctx.stroke();}
 });
 
-// ── Sitze — LU moquette ──
+// ── SITZE — LU moquette, unverändert ──
 var tSeat=mkTex(256,256,function(ctx,w,h){
   ctx.fillStyle='#1a0d20';ctx.fillRect(0,0,w,h);
   var cols=['#8b1a2e','#1e3a7a','#c8a020','#5c1220','#162d62','#a07818'];
   for(var iy=0;iy<h;iy+=16){
     for(var ix=0;ix<w;ix+=16){
       var ci=Math.floor((ix/16+iy/16))%3;
-      ctx.fillStyle=cols[ci];
-      ctx.fillRect(ix,iy,8,8);
-      ctx.fillStyle=cols[ci+3];
-      ctx.fillRect(ix+8,iy+8,8,8);
+      ctx.fillStyle=cols[ci];ctx.fillRect(ix,iy,8,8);
+      ctx.fillStyle=cols[ci+3];ctx.fillRect(ix+8,iy+8,8,8);
     }
   }
   for(var d=0;d<w+h;d+=4){
@@ -354,61 +335,50 @@ var tSeat=mkTex(256,256,function(ctx,w,h){
     ctx.strokeStyle='rgba(0,40,120,.06)';
     ctx.beginPath();ctx.moveTo(d,h);ctx.lineTo(w,d);ctx.stroke();
   }
-  ctx.fillStyle='rgba(10,5,18,.35)';ctx.fillRect(0,0,w,h);
+  ctx.fillStyle='rgba(10,5,18,.32)';ctx.fillRect(0,0,w,h);
 });
 var MSEAT=new THREE.MeshStandardMaterial({map:tSeat,roughness:.96,metalness:.0});
-var MSMET=new THREE.MeshStandardMaterial({color:0x22283a,metalness:.72,roughness:.42});
+var MSMET=new THREE.MeshStandardMaterial({color:0x18202e,metalness:.60,roughness:.55});
 
-// ── Screen links — nur Grafik & Prozentzahlen (kein Text) ──
+// ── SCREENS ──
 var tScreenL=mkTex(512,288,function(ctx,w,h){
   ctx.fillStyle='#060912';ctx.fillRect(0,0,w,h);
-  // Header-Bar ohne Text — nur Farbe
   ctx.fillStyle='#dc241f';ctx.fillRect(0,0,w,28);
-  // Kennzahlen-Blöcke
-  var cols=[[20,'3.2M'],[190,'98%'],[360,'+12']];
-  cols.forEach(function(c){
+  [[20,'3.2M'],[190,'98%'],[360,'+12']].forEach(function(c){
     ctx.fillStyle='rgba(255,255,255,.05)';ctx.fillRect(c[0],38,148,76);
-    ctx.fillStyle='rgba(220,36,31,.92)';ctx.font='bold 32px monospace';ctx.fillText(c[1],c[0]+12,86);
+    ctx.fillStyle='rgba(220,36,31,.95)';ctx.font='bold 32px monospace';ctx.fillText(c[1],c[0]+12,86);
   });
-  // Balkendiagramm
   [.42,.6,.35,.75,.52,.88,.65,1,.78,.92,.6,.82].forEach(function(v,i){
     var bh=Math.round(v*58),bx=20+i*40,by=h-16-bh;
-    ctx.fillStyle='rgba(220,36,31,'+(0.18+v*.52)+')';
-    ctx.fillRect(bx,by,28,bh);
+    ctx.fillStyle='rgba(220,36,31,'+(0.22+v*.55)+')';ctx.fillRect(bx,by,28,bh);
   });
-  ctx.fillStyle='rgba(255,255,255,.06)';ctx.fillRect(0,h-16,w,1);
+  ctx.fillStyle='rgba(255,255,255,.05)';ctx.fillRect(0,h-16,w,1);
   for(var s=0;s<h;s+=2){ctx.fillStyle='rgba(0,0,0,.03)';ctx.fillRect(0,s,w,1);}
 });
-
-// ── Screen rechts — nur Grafik & Prozentzahlen ──
 var tScreenR=mkTex(512,288,function(ctx,w,h){
   ctx.fillStyle='#070610';ctx.fillRect(0,0,w,h);
-  // Header-Bar ohne Text
   ctx.fillStyle='#003688';ctx.fillRect(0,0,w,28);
-  // Zifferblatt
   var cx=140,cy=168,r=88;
-  ctx.strokeStyle='rgba(200,160,32,.38)';ctx.lineWidth=2;
+  ctx.strokeStyle='rgba(200,160,32,.40)';ctx.lineWidth=2;
   ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
-  ctx.strokeStyle='rgba(200,160,32,.15)';ctx.lineWidth=1;
+  ctx.strokeStyle='rgba(200,160,32,.14)';ctx.lineWidth=1;
   ctx.beginPath();ctx.arc(cx,cy,r-14,0,Math.PI*2);ctx.stroke();
   for(var tk=0;tk<12;tk++){
     var a=tk/12*Math.PI*2-Math.PI/2;
-    ctx.strokeStyle='rgba(200,160,32,.6)';ctx.lineWidth=tk%3===0?2:.8;
+    ctx.strokeStyle='rgba(200,160,32,.62)';ctx.lineWidth=tk%3===0?2:.8;
     ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*(r-5),cy+Math.sin(a)*(r-5));
     ctx.lineTo(cx+Math.cos(a)*(r-18),cy+Math.sin(a)*(r-18));ctx.stroke();
   }
   ctx.strokeStyle='rgba(200,160,32,.85)';ctx.lineWidth=2.5;
   ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx,cy-54);ctx.stroke();
-  ctx.strokeStyle='rgba(200,160,32,.7)';ctx.lineWidth=2;
+  ctx.strokeStyle='rgba(200,160,32,.70)';ctx.lineWidth=2;
   ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+38,cy+22);ctx.stroke();
-  // Nur Prozentzahl — kein Begleittext
-  ctx.fillStyle='rgba(220,36,31,.95)';ctx.font='bold 44px monospace';ctx.fillText('+34%',290,120);
+  ctx.fillStyle='rgba(220,36,31,.98)';ctx.font='bold 44px monospace';ctx.fillText('+34%',290,120);
   for(var s2=0;s2<h;s2+=2){ctx.fillStyle='rgba(0,0,0,.028)';ctx.fillRect(0,s2,w,1);}
 });
 
 // ── SCENE ─────────────────────────────────────────────────────
 var CL=20,CW=1.35,CH=2.1,FY=-1.0,CYL=FY+CH;
-
 function mat(o){return new THREE.MeshStandardMaterial(o);}
 function addP(w,h,m,px,py,pz,rx,ry){
   var o=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);
@@ -419,28 +389,29 @@ function addB(w,h,d,m,px,py,pz){
   o.position.set(px,py,pz);scene.add(o);return o;
 }
 
-// ── OBERFLÄCHEN ───────────────────────────────────────────────
-// Boden — grauer Vinyl PVC
-addP(CW*2,CL+3,mat({map:tFloor,roughness:.55,metalness:.04,color:0xcccccc}),0,FY,-(CL/2-2),-Math.PI/2);
-// Decke
-addP(CW*2,CL+3,mat({map:tCeil,roughness:.80,color:0xd5d0c8}),0,CYL,-(CL/2-2),Math.PI/2);
+// BODEN — gleiche Textur und Farbe wie Decke
+addP(CW*2,CL+3,mat({map:tCeil,roughness:.85,color:0xa8a298}),0,FY,-(CL/2-2),-Math.PI/2);
+// DECKE — gedämpftes schmutziges Crème
+addP(CW*2,CL+3,mat({map:tCeil,roughness:.85,color:0xa8a298}),0,CYL,-(CL/2-2),Math.PI/2);
 
-var mWall=mat({map:tWall,roughness:.72,metalness:.04});
-var mDarkUpper=mat({color:0x0a0d1a,roughness:.80,metalness:.05});
+// WÄNDE — vergilbtes Enamel unten, tiefes Nachtblau oben
+var mWall=mat({map:tWall,roughness:.78,metalness:.02});
+var mUpper=mat({color:0x0c1020,roughness:.88,metalness:.04});
 var wallH=CH*.62,panH=CH*.38;
 addP(CL+3,wallH,mWall,-CW,FY+wallH/2,-(CL/2-2),0,Math.PI/2);
-addP(CL+3,panH,mDarkUpper,-CW,FY+wallH+panH/2,-(CL/2-2),0,Math.PI/2);
+addP(CL+3,panH,mUpper,-CW,FY+wallH+panH/2,-(CL/2-2),0,Math.PI/2);
 addP(CL+3,wallH,mWall,CW,FY+wallH/2,-(CL/2-2),0,-Math.PI/2);
-addP(CL+3,panH,mDarkUpper,CW,FY+wallH+panH/2,-(CL/2-2),0,-Math.PI/2);
+addP(CL+3,panH,mUpper,CW,FY+wallH+panH/2,-(CL/2-2),0,-Math.PI/2);
 
-var mEnd=mat({color:0x14121a,roughness:.88,metalness:.04});
+// STIRNWÄNDE
+var mEnd=mat({color:0x0c1018,roughness:.90,metalness:.04});
 addP(CW*2,CH,mEnd,0,FY+CH/2,-CL+2);
 var bwm=new THREE.Mesh(new THREE.PlaneGeometry(CW*2,CH),mEnd);
 bwm.rotation.y=Math.PI;bwm.position.set(0,FY+CH/2,3.8);scene.add(bwm);
 
-// ── RIPPEN ────────────────────────────────────────────────────
-var mRib=mat({color:0x8890a0,metalness:.82,roughness:.28});
-var mRibDark=mat({color:0x303848,metalness:.58,roughness:.50});
+// RIPPEN — dunkles verwittertes Metall
+var mRib=mat({color:0x5a6070,metalness:.72,roughness:.50});
+var mRibDark=mat({color:0x22262e,metalness:.50,roughness:.65});
 for(var rz=-CL+2;rz<=2;rz+=2.4){
   addB(.45,.03,.05,mRib,-CW+.225,CYL,rz);
   addB(.45,.03,.05,mRib,CW-.225,CYL,rz);
@@ -448,37 +419,38 @@ for(var rz=-CL+2;rz<=2;rz+=2.4){
   addB(.024,CH,.04,mRib,CW,FY+CH/2,rz);
   addB(.005,CH,.044,mRibDark,-CW+.014,FY+CH/2,rz);
   addB(.005,CH,.044,mRibDark,CW-.014,FY+CH/2,rz);
-  addB(.018,CH*.08,.04,mat({color:0x003688,metalness:.65,roughness:.35}),-CW,FY+wallH-.02,rz);
-  addB(.018,CH*.08,.04,mat({color:0x003688,metalness:.65,roughness:.35}),CW,FY+wallH-.02,rz);
+  // Dado-Schiene — dunkles Metall, kein Streifen
+  addB(.018,CH*.06,.04,mat({color:0x282e3a,metalness:.70,roughness:.40}),-CW,FY+wallH-.02,rz);
+  addB(.018,CH*.06,.04,mat({color:0x282e3a,metalness:.70,roughness:.40}),CW,FY+wallH-.02,rz);
 }
 
-// ── TÜR ──────────────────────────────────────────────────────
-var mDoor=mat({color:0x1c1a26,metalness:.62,roughness:.48});
-var mDoorGlass=mat({color:0x03060e,transparent:true,opacity:.82,roughness:.02,metalness:.22});
-var mDoorFrame=mat({color:0x14121c,metalness:.72,roughness:.38});
+// TÜR
+var mDoor=mat({color:0x181c28,metalness:.58,roughness:.52});
+var mDoorGlass=mat({color:0x02040c,transparent:true,opacity:.84,roughness:.02,metalness:.22});
+var mDoorFrame=mat({color:0x10121c,metalness:.70,roughness:.42});
 addB(.036,2.02,.12,mDoorFrame,-.50,FY+1.01,-CL+2.02);
 addB(.036,2.02,.12,mDoorFrame,.50,FY+1.01,-CL+2.02);
 addB(1.04,.036,.12,mDoorFrame,0,FY+2.02,-CL+2.02);
 addB(.46,1.92,.042,mDoor,-.48,FY+.96,-CL+2.04);
 addB(.46,1.92,.042,mDoor,.48,FY+.96,-CL+2.04);
-addB(.018,1.92,.042,mat({color:0x02020a,metalness:.88}),0,FY+.96,-CL+2.03);
+addB(.018,1.92,.042,mat({color:0x02030a,metalness:.90}),0,FY+.96,-CL+2.03);
 [-.48,.48].forEach(function(dx){
   var dg=new THREE.Mesh(new THREE.PlaneGeometry(.36,.48),mDoorGlass);
   dg.position.set(dx,FY+1.65,-CL+2.07);scene.add(dg);
-  addB(.40,.52,.028,mat({color:0xd4a808,metalness:.48,roughness:.55}),dx,FY+1.65,-CL+2.03);
-  addB(.36,.48,.032,mat({color:0x02020c,metalness:.9}),dx,FY+1.65,-CL+2.05);
+  addB(.40,.52,.028,mat({color:0xc49808,metalness:.50,roughness:.55}),dx,FY+1.65,-CL+2.03);
+  addB(.36,.48,.032,mat({color:0x02030c,metalness:.9}),dx,FY+1.65,-CL+2.05);
   var dg2=new THREE.Mesh(new THREE.PlaneGeometry(.34,.46),mDoorGlass);
   dg2.position.set(dx,FY+1.65,-CL+2.075);scene.add(dg2);
-  addB(.014,.14,.018,mat({color:0xd8d4cc,metalness:.95,roughness:.12}),dx+(dx<0?-.19:.19),FY+.98,-CL+2.08);
+  addB(.014,.14,.018,mat({color:0xb8b4ac,metalness:.94,roughness:.14}),dx+(dx<0?-.19:.19),FY+.98,-CL+2.08);
 });
 
-// ── FENSTER ───────────────────────────────────────────────────
-var mWF=mat({color:0x1c2030,metalness:.65,roughness:.48});
-var mWG=mat({color:0x010306,transparent:true,opacity:.88,roughness:.02,metalness:.35,depthWrite:false});
-var mSill=mat({color:0x9090a0,metalness:.72,roughness:.32});
+// FENSTER — dunkler Stahlrahmen, schwarzes Glas
+var mWF=mat({color:0x18202e,metalness:.65,roughness:.50});
+var mWG=mat({color:0x010204,transparent:true,opacity:.90,roughness:.02,metalness:.38,depthWrite:false});
+var mSill=mat({color:0x606878,metalness:.68,roughness:.40});
 [-1.0,-3.2,-5.6,-10.4,-12.8,-15.2].forEach(function(wz){
   addB(.044,.72,1.18,mWF,-CW,FY+1.18,wz);
-  addB(.052,.68,1.12,mat({color:0x0c1018,metalness:.42,roughness:.68}),-CW+.028,FY+1.18,wz);
+  addB(.052,.68,1.12,mat({color:0x080c14,metalness:.40,roughness:.70}),-CW+.028,FY+1.18,wz);
   addB(.048,.022,1.14,mSill,-CW,FY+.82,wz);
   addB(.048,.022,1.14,mSill,-CW,FY+1.54,wz);
   var gl=new THREE.Mesh(new THREE.PlaneGeometry(1.12,.68),mWG);
@@ -486,34 +458,33 @@ var mSill=mat({color:0x9090a0,metalness:.72,roughness:.32});
 });
 [-1.0,-5.6,-8.0,-10.4,-12.8,-15.2].forEach(function(wz){
   addB(.044,.72,1.18,mWF,CW,FY+1.18,wz);
-  addB(.052,.68,1.12,mat({color:0x0c1018,metalness:.42,roughness:.68}),CW-.028,FY+1.18,wz);
+  addB(.052,.68,1.12,mat({color:0x080c14,metalness:.40,roughness:.70}),CW-.028,FY+1.18,wz);
   addB(.048,.022,1.14,mSill,CW,FY+.82,wz);
   addB(.048,.022,1.14,mSill,CW,FY+1.54,wz);
   var gl=new THREE.Mesh(new THREE.PlaneGeometry(1.12,.68),mWG);
   gl.rotation.y=-Math.PI/2;gl.position.set(CW-.02,FY+1.18,wz);scene.add(gl);
 });
 
-// ── SITZE ─────────────────────────────────────────────────────
+// SITZE
 var SW=.40,SD=.36,SG=.04,WG=.06;
 var SXL1=-CW+WG+SW/2,SXL2=-CW+WG+SW+SG+SW/2;
 var SXR1=CW-WG-SW/2,SXR2=CW-WG-SW-SG-SW/2;
 var PITCH=SD*2+0.52+0.55;
-
 function addSeat(x,z,faceFwd){
   var bz=z+(faceFwd?SD/2-0.02:-(SD/2-0.02));
   var cu=new THREE.Mesh(new THREE.BoxGeometry(SW,.058,SD),MSEAT);
   cu.position.set(x,FY+.38,z);scene.add(cu);
   var lip=new THREE.Mesh(new THREE.BoxGeometry(SW,.018,.018),
-    mat({color:0x28243a,roughness:.88,metalness:.02}));
+    mat({color:0x181c28,roughness:.90,metalness:.04}));
   lip.position.set(x,FY+.348,z+(faceFwd?SD/2:-(SD/2)));scene.add(lip);
   var ba=new THREE.Mesh(new THREE.BoxGeometry(SW,.52,.05),MSEAT);
   ba.position.set(x,FY+.66,bz);scene.add(ba);
   var cap=new THREE.Mesh(new THREE.BoxGeometry(SW,.018,.055),
-    mat({color:0x1e1c2c,roughness:.88,metalness:.04}));
+    mat({color:0x141820,roughness:.90,metalness:.04}));
   cap.position.set(x,FY+.92,bz);scene.add(cap);
   var outerX=x+(x<0?-SW/2:SW/2);
   addB(.03,.11,SD+.04,MSMET,outerX,FY+.39,z);
-  addB(.038,.015,SD+.02,mat({color:0x181626,roughness:.85,metalness:.02}),outerX,FY+.45,z);
+  addB(.038,.015,SD+.02,mat({color:0x121620,roughness:.88,metalness:.04}),outerX,FY+.45,z);
 }
 for(var pz=-.4;pz>-CL+2.5;pz-=PITCH){
   var zA=pz,zB=pz-SD-0.52;
@@ -527,21 +498,17 @@ for(var pz=-.4;pz>-CL+2.5;pz-=PITCH){
   });
 }
 
-// ── HALTESTANGEN ──────────────────────────────────────────────
-var mPole=mat({color:0xd8d4cc,metalness:.94,roughness:.08});
-var mGrip=mat({color:0xe8c000,metalness:.22,roughness:.65});
-var mRail=mat({color:0xc8c4bc,metalness:.88,roughness:.14});
+// HALTESTANGEN — dunkles verwittertes Messing-Silber, goldgelbe Griffe
+var mPole=mat({color:0xb8b4ac,metalness:.90,roughness:.18});
+var mGrip=mat({color:0xd4aa00,metalness:.20,roughness:.65});
+var mRail=mat({color:0xa8a49c,metalness:.85,roughness:.22});
 var railGeo=new THREE.CylinderGeometry(.014,.014,CL,10);
 var railL=new THREE.Mesh(railGeo,mRail);
 railL.rotation.x=Math.PI/2;railL.position.set(-CW+.14,CYL-.08,-(CL/2-2));scene.add(railL);
 var railR=new THREE.Mesh(railGeo,mRail);
 railR.rotation.x=Math.PI/2;railR.position.set(CW-.14,CYL-.08,-(CL/2-2));scene.add(railR);
-
-var POLE_X=0.22;
-var POLE_H=CH*.88;
-var POLE_BOT=FY+CH*.06;
-var POLE_TOP=FY+CH*.94;
-var mFlange=mat({color:0xc8c4bc,metalness:.90,roughness:.18});
+var POLE_X=0.22,POLE_H=CH*.88,POLE_BOT=FY+CH*.06,POLE_TOP=FY+CH*.94;
+var mFlange=mat({color:0xa8a49c,metalness:.88,roughness:.22});
 for(var pz2=1.0;pz2>-CL+1;pz2-=2.4){
   [-POLE_X,POLE_X].forEach(function(px){
     var p=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,POLE_H,12),mPole);
@@ -561,61 +528,64 @@ for(var pz2=1.0;pz2>-CL+1;pz2-=2.4){
   });
 }
 
-// ── BELEUCHTUNG — keine Leuchtmodule an der Decke ────────────
-// Nur ambiente und Punktlichter, kein sichtbares Deckenpanel/Röhren-Mesh
-var LC=new THREE.Color(1,.94,.82);
+// ── BELEUCHTUNG — sparsam, warm, schummrig wie echte Tube ──
+// Nur wenige Punktlichter, sehr gedämpft — kein Überstrahlen
+var LC=new THREE.Color(.98,.88,.68); // warmes Fluoreszenz-Gelb
 for(var lz=.5;lz>-CL+1;lz-=3.6){
-  // Warmes Punktlicht (keine Gehäuse/Röhren-Meshes)
-  var lpt=new THREE.PointLight(LC,.7,6.5);
-  lpt.position.set(0,CYL-.18,lz);scene.add(lpt);
-  var lside=new THREE.PointLight(LC,.15,3.2);
-  lside.position.set(0,CYL-.05,lz);scene.add(lside);
+  var lpt=new THREE.PointLight(LC,.55,5.5);
+  lpt.position.set(0,CYL-.20,lz);scene.add(lpt);
+  // Seitenstreuung minimal
+  var lsideA=new THREE.PointLight(LC,.10,2.8);
+  lsideA.position.set(-.6,CYL-.12,lz);scene.add(lsideA);
+  var lsideB=new THREE.PointLight(LC,.10,2.8);
+  lsideB.position.set(.6,CYL-.12,lz);scene.add(lsideB);
 }
+// Ambient: sehr dunkel — der Raum soll schummrig bleiben
+scene.add(new THREE.AmbientLight(0x18140c,4.2));  // warmer Unterton
+scene.add(new THREE.AmbientLight(0x060810,.8));   // kaum kühles Licht
+var doorGlow=new THREE.PointLight(0x100808,.22,3.5);
+doorGlow.position.set(0,FY+1.4,-CL+3);scene.add(doorGlow);
 
-scene.add(new THREE.AmbientLight(0x1a120a,3.8));
-scene.add(new THREE.AmbientLight(0x04060e,.6));
-var doorGlow=new THREE.PointLight(0x20100a,.28,4.0);doorGlow.position.set(0,FY+1.4,-CL+3);scene.add(doorGlow);
-
-// ── SCREENS ───────────────────────────────────────────────────
+// SCREENS
 var sML=new THREE.Mesh(new THREE.PlaneGeometry(1.04,.58),mat({map:tScreenL,emissive:0x040810,emissiveIntensity:.92,roughness:.04}));
 sML.rotation.y=Math.PI/2;sML.position.set(-CW+.022,FY+1.50,-8.0);scene.add(sML);
-addB(.026,.64,1.08,mat({color:0x0a0c14,metalness:.74,roughness:.40}),-CW,FY+1.50,-8.0);
-var sgL=new THREE.PointLight(0x080e28,.45,2.8);sgL.position.set(-CW+.55,FY+1.50,-8.0);scene.add(sgL);
+addB(.026,.64,1.08,mat({color:0x08090e,metalness:.74,roughness:.40}),-CW,FY+1.50,-8.0);
+var sgL=new THREE.PointLight(0x060c28,.35,2.4);sgL.position.set(-CW+.55,FY+1.50,-8.0);scene.add(sgL);
 
 var sMR=new THREE.Mesh(new THREE.PlaneGeometry(1.04,.58),mat({map:tScreenR,emissive:0x100808,emissiveIntensity:.92,roughness:.04}));
 sMR.rotation.y=-Math.PI/2;sMR.position.set(CW-.022,FY+1.50,-3.2);scene.add(sMR);
-addB(.026,.64,1.08,mat({color:0x0e0c0a,metalness:.74,roughness:.40}),CW,FY+1.50,-3.2);
-var sgR=new THREE.PointLight(0x220c04,.45,2.8);sgR.position.set(CW-.55,FY+1.50,-3.2);scene.add(sgR);
+addB(.026,.64,1.08,mat({color:0x0e0a08,metalness:.74,roughness:.40}),CW,FY+1.50,-3.2);
+var sgR=new THREE.PointLight(0x280808,.35,2.4);sgR.position.set(CW-.55,FY+1.50,-3.2);scene.add(sgR);
 
-// ── TUBE MAP STRIP ────────────────────────────────────────────
-var mMapStrip=mat({color:0xf5f0e8,emissive:0xede8e0,emissiveIntensity:.18,roughness:.65});
+// TUBE MAP STRIP
+var mMapStrip=mat({color:0xc8c0a8,emissive:0x9c9480,emissiveIntensity:.10,roughness:.75});
 [-1.8,-4.2,-6.6,-9.0,-11.4,-13.8].forEach(function(az){
   addB(.022,.14,.88,mMapStrip,-CW,FY+1.84,az);
   addB(.022,.14,.88,mMapStrip,CW,FY+1.84,az);
 });
 
-// ── TUNNEL ────────────────────────────────────────────────────
+// TUNNEL
 var tnl=new THREE.Mesh(
   new THREE.CylinderGeometry(3.2,3.2,180,12,1,true),
-  mat({color:0x060608,side:THREE.BackSide,roughness:1})
+  mat({color:0x080808,side:THREE.BackSide,roughness:1})
 );
 tnl.rotation.x=Math.PI/2;tnl.position.set(0,FY+.2,-55);scene.add(tnl);
 for(var ti=0;ti<18;ti++){
   var tb=new THREE.Mesh(new THREE.SphereGeometry(.025,4,4),
-    mat({color:0xe06010,emissive:0xc04808,emissiveIntensity:2.2}));
+    mat({color:0xd05010,emissive:0xa03808,emissiveIntensity:2.0}));
   tb.position.set(0,FY-.2,-ti*7-4);scene.add(tb);
   var tbl=new THREE.Mesh(new THREE.SphereGeometry(.018,4,4),
-    mat({color:0xffffff,emissive:0xe8e0d0,emissiveIntensity:1.8}));
+    mat({color:0xddd8c8,emissive:0xc8c0a8,emissiveIntensity:1.5}));
   tbl.position.set(-2.8,FY+.6,-ti*7-4);scene.add(tbl);
 }
 
-// ── VIEWS ──────────────────────────────────────────────────────
+// VIEWS
 var VIEWS={
-  standing:{pos:[0,      FY+.92,  1.4],    look:[0,      FY+.88,-14]},
-  seat:    {pos:[CW-.8,  FY+1.50,-3.2],    look:[CW+.1,  FY+1.50,-3.2]},
-  screen:  {pos:[-CW+.85,FY+1.50,-8.0],    look:[-CW-.1, FY+1.50,-8.0]},
-  window:  {pos:[-CW+.16,FY+1.50, -3.8],    look:[CW-.2,  FY+1.46, -14]},
-  door:    {pos:[0,      FY+.92, -CL+4.5], look:[0,      FY+.90,-CL-.5]},
+  standing:{pos:[0,FY+.92,1.4],look:[0,FY+.88,-14]},
+  seat:{pos:[CW-.8,FY+1.50,-3.2],look:[CW+.1,FY+1.50,-3.2]},
+  screen:{pos:[-CW+.85,FY+1.50,-8.0],look:[-CW-.1,FY+1.50,-8.0]},
+  window:{pos:[-CW+.16,FY+1.50,-3.8],look:[CW-.2,FY+1.46,-14]},
+  door:{pos:[0,FY+.92,-CL+4.5],look:[0,FY+.90,-CL-.5]},
 };
 var curV='standing';
 var tP=VIEWS.standing.pos.slice(),tL=VIEWS.standing.look.slice();
@@ -638,16 +608,14 @@ var cP=new THREE.Vector3(tP[0],tP[1],tP[2]);
 var cLv=new THREE.Vector3(tL[0],tL[1],tL[2]);
 function updMK(){}
 
-// ── STATIONSNAMEN ─────────────────────────────────────────────
 var stnEl=document.getElementById('stn');
-var STNS=['KING\'S CROSS','OXFORD CIRCUS','BANK','WATERLOO','BAKER STREET','CANARY WHARF','LONDON BRIDGE'];
+var STNS=["KING'S CROSS","OXFORD CIRCUS","BANK","WATERLOO","BAKER STREET","CANARY WHARF","LONDON BRIDGE"];
 var stIdx=0,lastStT=-25;
 function showStn(){
   stnEl.textContent=STNS[stIdx%STNS.length];stnEl.classList.add('show');
   setTimeout(function(){stnEl.classList.remove('show');},3000);stIdx++;
 }
 
-// ── ANIMATION ─────────────────────────────────────────────────
 var clock=new THREE.Clock(),T=0,tnlOff=0;
 var tPv=new THREE.Vector3(),tLv=new THREE.Vector3();
 var needsRender=true;
@@ -656,31 +624,19 @@ var _cPprev=new THREE.Vector3(),_cLprev=new THREE.Vector3();
 function animate(){
   requestAnimationFrame(animate);
   var dt=Math.min(clock.getDelta(),.05);T+=dt;
-
   var cyc=T%35,spd=14;
   if(cyc>28)spd=14*Math.max(0,(35-cyc)/7);
   else if(cyc<5)spd=14*Math.min(1,cyc/5);
   if(spd<1.2&&T-lastStT>10){lastStT=T;showStn();}
-
   tPv.set(tP[0],tP[1],tP[2]);tLv.set(tL[0],tL[1],tL[2]);
   _cPprev.copy(cP);_cLprev.copy(cLv);
   cP.lerp(tPv,.06);cLv.lerp(tLv,.06);
-
   var moving=(_cPprev.distanceToSquared(cP)>1e-8||_cLprev.distanceToSquared(cLv)>1e-8);
   if(moving)needsRender=true;
-
-  if(spd>0.5){
-    tnlOff=(tnlOff+spd*dt)%7;
-    tnl.position.z=-55+tnlOff;
-    needsRender=true;
-  }
-
+  if(spd>0.5){tnlOff=(tnlOff+spd*dt)%7;tnl.position.z=-55+tnlOff;needsRender=true;}
   if(needsRender){
-    camera.position.copy(cP);
-    camera.lookAt(cLv);
-    camera.rotation.z=0;
-    updMK();
-    renderer.render(scene,camera);
+    camera.position.copy(cP);camera.lookAt(cLv);camera.rotation.z=0;
+    updMK();renderer.render(scene,camera);
     if(!moving&&spd<=0.5)needsRender=false;
   }
 }
