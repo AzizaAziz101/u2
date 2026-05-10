@@ -214,7 +214,7 @@ window.closeImp=function(){document.getElementById('imp').classList.remove('show
 var cv=document.getElementById('c');
 var W=window.innerWidth,H=window.innerHeight;
 var renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.0));
 renderer.setSize(W,H);
 renderer.toneMapping=THREE.ReinhardToneMapping;
 renderer.toneMappingExposure=0.88;
@@ -502,7 +502,7 @@ for(var pz=-.4;pz>-CL+2.5;pz-=PITCH){
 var mPole=mat({color:0xb8b4ac,metalness:.90,roughness:.18});
 var mGrip=mat({color:0xd4aa00,metalness:.20,roughness:.65});
 var mRail=mat({color:0xa8a49c,metalness:.85,roughness:.22});
-var railGeo=new THREE.CylinderGeometry(.014,.014,CL,10);
+var railGeo=new THREE.CylinderGeometry(.014,.014,CL,6);
 var railL=new THREE.Mesh(railGeo,mRail);
 railL.rotation.x=Math.PI/2;railL.position.set(-CW+.14,CYL-.08,-(CL/2-2));scene.add(railL);
 var railR=new THREE.Mesh(railGeo,mRail);
@@ -511,51 +511,43 @@ var POLE_X=0.22,POLE_H=CH*.88,POLE_BOT=FY+CH*.06,POLE_TOP=FY+CH*.94;
 var mFlange=mat({color:0xa8a49c,metalness:.88,roughness:.22});
 for(var pz2=1.0;pz2>-CL+1;pz2-=2.4){
   [-POLE_X,POLE_X].forEach(function(px){
-    var p=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,POLE_H,12),mPole);
+    var p=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,POLE_H,7),mPole);
     p.position.set(px,FY+CH*.50,pz2);scene.add(p);
-    var fTop=new THREE.Mesh(new THREE.CylinderGeometry(.038,.038,.022,16),mFlange);
+    var fTop=new THREE.Mesh(new THREE.CylinderGeometry(.038,.038,.022,8),mFlange);
     fTop.position.set(px,POLE_TOP,pz2);scene.add(fTop);
-    var cTop=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.028,12),mFlange);
+    var cTop=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.028,7),mFlange);
     cTop.position.set(px,POLE_TOP-.026,pz2);scene.add(cTop);
-    var fBot=new THREE.Mesh(new THREE.CylinderGeometry(.040,.040,.024,16),mFlange);
+    var fBot=new THREE.Mesh(new THREE.CylinderGeometry(.040,.040,.024,8),mFlange);
     fBot.position.set(px,POLE_BOT,pz2);scene.add(fBot);
-    var cBot=new THREE.Mesh(new THREE.CylinderGeometry(.024,.024,.028,12),mFlange);
+    var cBot=new THREE.Mesh(new THREE.CylinderGeometry(.024,.024,.028,7),mFlange);
     cBot.position.set(px,POLE_BOT+.028,pz2);scene.add(cBot);
-    var yb=new THREE.Mesh(new THREE.CylinderGeometry(.020,.020,.060,12),mGrip);
+    var yb=new THREE.Mesh(new THREE.CylinderGeometry(.020,.020,.060,7),mGrip);
     yb.position.set(px,FY+CH*.52,pz2);scene.add(yb);
-    var yb2=new THREE.Mesh(new THREE.CylinderGeometry(.020,.020,.050,12),mGrip);
+    var yb2=new THREE.Mesh(new THREE.CylinderGeometry(.020,.020,.050,7),mGrip);
     yb2.position.set(px,FY+CH*.28,pz2);scene.add(yb2);
   });
 }
 
-// ── BELEUCHTUNG — sparsam, warm, schummrig wie echte Tube ──
-// Nur wenige Punktlichter, sehr gedämpft — kein Überstrahlen
-var LC=new THREE.Color(.98,.88,.68); // warmes Fluoreszenz-Gelb
+// ── BELEUCHTUNG — optimiert: 1 PointLight pro Position ──
+var LC=new THREE.Color(.98,.88,.68);
 for(var lz=.5;lz>-CL+1;lz-=3.6){
-  var lpt=new THREE.PointLight(LC,.55,5.5);
+  var lpt=new THREE.PointLight(LC,.65,7.5);
   lpt.position.set(0,CYL-.20,lz);scene.add(lpt);
-  // Seitenstreuung minimal
-  var lsideA=new THREE.PointLight(LC,.10,2.8);
-  lsideA.position.set(-.6,CYL-.12,lz);scene.add(lsideA);
-  var lsideB=new THREE.PointLight(LC,.10,2.8);
-  lsideB.position.set(.6,CYL-.12,lz);scene.add(lsideB);
 }
-// Ambient: sehr dunkel — der Raum soll schummrig bleiben
-scene.add(new THREE.AmbientLight(0x18140c,4.2));  // warmer Unterton
-scene.add(new THREE.AmbientLight(0x060810,.8));   // kaum kühles Licht
-var doorGlow=new THREE.PointLight(0x100808,.22,3.5);
+scene.add(new THREE.AmbientLight(0x1c1608,5.0));
+var doorGlow=new THREE.PointLight(0x100808,.18,3.0);
 doorGlow.position.set(0,FY+1.4,-CL+3);scene.add(doorGlow);
 
 // SCREENS
 var sML=new THREE.Mesh(new THREE.PlaneGeometry(1.04,.58),mat({map:tScreenL,emissive:0x040810,emissiveIntensity:.92,roughness:.04}));
 sML.rotation.y=Math.PI/2;sML.position.set(-CW+.022,FY+1.50,-8.0);scene.add(sML);
 addB(.026,.64,1.08,mat({color:0x08090e,metalness:.74,roughness:.40}),-CW,FY+1.50,-8.0);
-var sgL=new THREE.PointLight(0x060c28,.35,2.4);sgL.position.set(-CW+.55,FY+1.50,-8.0);scene.add(sgL);
+var sgL=new THREE.PointLight(0x060c28,.28,2.0);sgL.position.set(-CW+.55,FY+1.50,-8.0);scene.add(sgL);
 
 var sMR=new THREE.Mesh(new THREE.PlaneGeometry(1.04,.58),mat({map:tScreenR,emissive:0x100808,emissiveIntensity:.92,roughness:.04}));
 sMR.rotation.y=-Math.PI/2;sMR.position.set(CW-.022,FY+1.50,-3.2);scene.add(sMR);
 addB(.026,.64,1.08,mat({color:0x0e0a08,metalness:.74,roughness:.40}),CW,FY+1.50,-3.2);
-var sgR=new THREE.PointLight(0x280808,.35,2.4);sgR.position.set(CW-.55,FY+1.50,-3.2);scene.add(sgR);
+var sgR=new THREE.PointLight(0x280808,.28,2.0);sgR.position.set(CW-.55,FY+1.50,-3.2);scene.add(sgR);
 
 // TUBE MAP STRIP
 var mMapStrip=mat({color:0xc8c0a8,emissive:0x9c9480,emissiveIntensity:.10,roughness:.75});
@@ -566,11 +558,11 @@ var mMapStrip=mat({color:0xc8c0a8,emissive:0x9c9480,emissiveIntensity:.10,roughn
 
 // TUNNEL
 var tnl=new THREE.Mesh(
-  new THREE.CylinderGeometry(3.2,3.2,180,12,1,true),
+  new THREE.CylinderGeometry(3.2,3.2,180,8,1,true),
   mat({color:0x080808,side:THREE.BackSide,roughness:1})
 );
 tnl.rotation.x=Math.PI/2;tnl.position.set(0,FY+.2,-55);scene.add(tnl);
-for(var ti=0;ti<18;ti++){
+for(var ti=0;ti<10;ti++){
   var tb=new THREE.Mesh(new THREE.SphereGeometry(.025,4,4),
     mat({color:0xd05010,emissive:0xa03808,emissiveIntensity:2.0}));
   tb.position.set(0,FY-.2,-ti*7-4);scene.add(tb);
@@ -630,7 +622,7 @@ function animate(){
   if(spd<1.2&&T-lastStT>10){lastStT=T;showStn();}
   tPv.set(tP[0],tP[1],tP[2]);tLv.set(tL[0],tL[1],tL[2]);
   _cPprev.copy(cP);_cLprev.copy(cLv);
-  cP.lerp(tPv,.06);cLv.lerp(tLv,.06);
+  cP.lerp(tPv,.10);cLv.lerp(tLv,.10);
   var moving=(_cPprev.distanceToSquared(cP)>1e-8||_cLprev.distanceToSquared(cLv)>1e-8);
   if(moving)needsRender=true;
   if(spd>0.5){tnlOff=(tnlOff+spd*dt)%7;tnl.position.z=-55+tnlOff;needsRender=true;}
@@ -638,6 +630,7 @@ function animate(){
     camera.position.copy(cP);camera.lookAt(cLv);camera.rotation.z=0;
     updMK();renderer.render(scene,camera);
     if(!moving&&spd<=0.5)needsRender=false;
+    if((_cPprev.distanceToSquared(cP)<1e-10&&_cLprev.distanceToSquared(cLv)<1e-10))needsRender=false;
   }
 }
 animate();
